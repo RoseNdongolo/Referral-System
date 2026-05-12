@@ -1,0 +1,18 @@
+.footer {
+  padding: 18px 24px;
+  text-align: center;
+  background: rgba(8, 15, 40, 0.78);
+  color: #e2e8f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer p + p {
+  margin-top: 4px;
+}

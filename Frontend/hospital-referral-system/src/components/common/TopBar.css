@@ -1,0 +1,83 @@
+.topbar{
+  height:72px;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:rgba(10,15,28,.55);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.12);
+  color:#fff;
+}
+
+.topbar--compact{
+  height:64px;
+}
+
+.topbar-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.topbar-icon{
+  font-size:1.4rem;
+}
+
+.topbar-brand-text{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+
+.topbar-brand-text strong{
+  font-size:1rem;
+}
+
+.topbar-brand-text small{
+  opacity:.8;
+  font-size:.78rem;
+}
+
+.topbar-user{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.topbar-user-meta{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  line-height:1.1;
+}
+
+.topbar-user-name{
+  font-weight:600;
+}
+
+.topbar-user-role{
+  opacity:.8;
+  font-size:.78rem;
+}
+
+.topbar-logout{
+  border:none;
+  padding:10px 16px;
+  border-radius:10px;
+  background:#fff;
+  color:#0f172a;
+  font-weight:700;
+  cursor:pointer;
+}
+
+@media (max-width: 600px){
+  .topbar{
+    padding:0 16px;
+  }
+
+  .topbar-user-meta{
+    display:none;
+  }
+}
