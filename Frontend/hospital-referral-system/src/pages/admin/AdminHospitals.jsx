@@ -3,6 +3,14 @@ import "./AdminHospitals.css";
 
 const API_URL = "http://localhost:8000/api/hospitals/";
 
+const authHeaders = () => {
+  const token = localStorage.getItem("access_token");
+  return {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+};
+
 export default function AdminHospitals() {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +33,10 @@ export default function AdminHospitals() {
       setLoading(true);
       setError("");
 
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL, {
+        headers: authHeaders(),
+      });
+
       if (!res.ok) throw new Error("Failed to fetch hospitals");
 
       const data = await res.json();
@@ -63,9 +74,7 @@ export default function AdminHospitals() {
 
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           name: form.name,
           location: form.location,
@@ -102,6 +111,7 @@ export default function AdminHospitals() {
 
       const res = await fetch(`${API_URL}${id}/`, {
         method: "DELETE",
+        headers: authHeaders(),
       });
 
       if (!res.ok) throw new Error("Delete failed");

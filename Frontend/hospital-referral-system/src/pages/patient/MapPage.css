@@ -1,0 +1,43 @@
+/* MapPage.css */
+
+.map-page {
+  padding: 1.5rem;
+}
+
+.map-header {
+  margin-bottom: 1rem;
+}
+
+.map-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.map-header p {
+  color: #475569;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.map-wrapper {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 1rem;
+  color: #475569;
+}
+
+@media (max-width: 640px) {
+  .map-page { padding: 1rem; }
+  .map-header h1 { font-size: 1.25rem; }
+}

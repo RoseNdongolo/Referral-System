@@ -8,10 +8,16 @@ export default function MainLayout() {
   return (
     <div className="main-layout">
       <BackgroundLayer />
-      <TopBar showUser={false} showLogout={false} />
+
+      <TopBar
+        showUser={false}
+        showLogout={false}
+      />
+
       <main className="page-content">
         <Outlet />
       </main>
+
       <Footer />
     </div>
   );

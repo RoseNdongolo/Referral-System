@@ -77,3 +77,35 @@ def patient_dashboard_stats(request):
         "completed_referrals": Referral.objects.filter(status="completed").count(),
     }
     return JsonResponse(data)
+
+
+# NEW: Medical Director dashboard stats
+def medical_director_dashboard_stats(request):
+    """
+    Dashboard statistics for Medical Director role.
+    """
+    total_hospitals = Hospital.objects.count()
+    total_doctors = User.objects.filter(role="doctor").count()
+    total_referrals = Referral.objects.count()
+    pending_referrals = Referral.objects.filter(status="pending").count()
+    completed_referrals = Referral.objects.filter(status="completed").count()
+
+    # Optional: referrals per hospital (top 5)
+    referrals_per_hospital = []
+    hospitals = Hospital.objects.all()[:5]
+    for hospital in hospitals:
+        count = Referral.objects.filter(hospital=hospital).count()
+        referrals_per_hospital.append({
+            "hospital_name": hospital.name,
+            "count": count,
+        })
+
+    data = {
+        "total_hospitals": total_hospitals,
+        "total_doctors": total_doctors,
+        "total_referrals": total_referrals,
+        "pending_referrals": pending_referrals,
+        "completed_referrals": completed_referrals,
+        "referrals_per_hospital": referrals_per_hospital,
+    }
+    return JsonResponse(data)

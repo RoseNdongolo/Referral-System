@@ -1,5 +1,5 @@
-from django.contrib.gis.db import models
-
+from django.contrib.gis.db import models as gis_models
+from django.db import models
 
 class Hospital(models.Model):
     name = models.CharField(max_length=200)
@@ -7,9 +7,11 @@ class Hospital(models.Model):
     address = models.TextField()
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    location = models.PointField(null=True, blank=True)
+
+    # GIS location – store as Point (longitude, latitude)
+    location = gis_models.PointField(null=True, blank=True, help_text="Use (longitude, latitude) in SRID 4326")
+
+    # Facility flags
     has_emergency = models.BooleanField(default=False)
     has_surgery = models.BooleanField(default=False)
     has_icu = models.BooleanField(default=False)
@@ -18,6 +20,14 @@ class Hospital(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def latitude(self):
+        return self.location.y if self.location else None
+
+    @property
+    def longitude(self):
+        return self.location.x if self.location else None
 
 
 class HospitalSpecialty(models.Model):

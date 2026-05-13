@@ -5,6 +5,7 @@ from .views import (
     doctor_dashboard_stats,
     receptionist_dashboard_stats,
     patient_dashboard_stats,
+    medical_director_dashboard_stats,   # new import
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("doctor/dashboard-stats/", doctor_dashboard_stats, name="doctor-dashboard-stats"),
     path("receptionist/dashboard-stats/", receptionist_dashboard_stats, name="receptionist-dashboard-stats"),
     path("patient/dashboard-stats/", patient_dashboard_stats, name="patient-dashboard-stats"),
+    path("medical-director/dashboard-stats/", medical_director_dashboard_stats, name="medical-director-dashboard-stats"),
 ]

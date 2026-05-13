@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
+import adminService from "../../services/adminService";   // ← Updated Import
 import "./AdminSpecialists.css";
-
-const API_URL = "http://localhost:8000/api/specialists/";
 
 export default function AdminSpecialists() {
   const [specialists, setSpecialists] = useState([]);
@@ -14,6 +13,9 @@ export default function AdminSpecialists() {
     name: "",
     specialty: "",
     hospital: "",
+    department: "",
+    phone: "",
+    email: "",
   });
 
   useEffect(() => {
@@ -25,13 +27,11 @@ export default function AdminSpecialists() {
       setLoading(true);
       setError("");
 
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error("Failed to fetch specialists");
-
-      const data = await res.json();
+      const data = await adminService.getSpecialists();
       setSpecialists(Array.isArray(data) ? data : data.results || []);
     } catch (err) {
-      setError("Could not load specialists from backend.");
+      console.error(err);
+      setError("Could not load specialists.");
       setSpecialists([]);
     } finally {
       setLoading(false);
@@ -39,8 +39,7 @@ export default function AdminSpecialists() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const resetForm = () => {
@@ -49,6 +48,9 @@ export default function AdminSpecialists() {
       name: "",
       specialty: "",
       hospital: "",
+      department: "",
+      phone: "",
+      email: "",
     });
   };
 
@@ -58,38 +60,40 @@ export default function AdminSpecialists() {
       setSaving(true);
       setError("");
 
-      const method = form.id ? "PUT" : "POST";
-      const url = form.id ? `${API_URL}${form.id}/` : API_URL;
+      const payload = {
+        name: form.name,
+        specialty: form.specialty,
+        hospital: form.hospital || null,
+        department: form.department,
+        phone: form.phone,
+        email: form.email,
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: form.name,
-          specialty: form.specialty,
-          hospital: form.hospital,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Save failed");
+      if (form.id) {
+        await adminService.updateSpecialist(form.id, payload);
+      } else {
+        await adminService.createSpecialist(payload);
+      }
 
       await fetchSpecialists();
       resetForm();
     } catch (err) {
+      console.error(err);
       setError("Could not save specialist.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (specialist) => {
+  const handleEdit = (item) => {
     setForm({
-      id: specialist.id,
-      name: specialist.name || "",
-      specialty: specialist.specialty || "",
-      hospital: specialist.hospital || "",
+      id: item.id,
+      name: item.name || "",
+      specialty: item.specialty || "",
+      hospital: item.hospital || "",
+      department: item.department || "",
+      phone: item.phone || "",
+      email: item.email || "",
     });
   };
 
@@ -100,14 +104,10 @@ export default function AdminSpecialists() {
       setSaving(true);
       setError("");
 
-      const res = await fetch(`${API_URL}${id}/`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Delete failed");
-
-      setSpecialists((prev) => prev.filter((item) => item.id !== id));
+      await adminService.deleteSpecialist(id);
+      setSpecialists((prev) => prev.filter((x) => x.id !== id));
     } catch (err) {
+      console.error(err);
       setError("Could not delete specialist.");
     } finally {
       setSaving(false);
@@ -131,21 +131,19 @@ export default function AdminSpecialists() {
 
       {error && <div className="page-error">{error}</div>}
 
-      <div className="card form-card">
+      {/* Add / Edit Form */}
+      <div className="card">
         <h2>{form.id ? "Edit Specialist" : "Add Specialist"}</h2>
-
         <form onSubmit={handleSubmit} className="item-form">
           <div className="form-grid">
             <input
-              type="text"
               name="name"
-              placeholder="Specialist Name"
+              placeholder="Full Name"
               value={form.name}
               onChange={handleChange}
               required
             />
             <input
-              type="text"
               name="specialty"
               placeholder="Specialty"
               value={form.specialty}
@@ -153,10 +151,28 @@ export default function AdminSpecialists() {
               required
             />
             <input
-              type="text"
               name="hospital"
-              placeholder="Hospital"
+              placeholder="Hospital ID"
               value={form.hospital}
+              onChange={handleChange}
+            />
+            <input
+              name="department"
+              placeholder="Department"
+              value={form.department}
+              onChange={handleChange}
+            />
+            <input
+              name="phone"
+              placeholder="Phone Number"
+              value={form.phone}
+              onChange={handleChange}
+            />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email Address"
+              value={form.email}
               onChange={handleChange}
             />
           </div>
@@ -174,45 +190,42 @@ export default function AdminSpecialists() {
         </form>
       </div>
 
-      <div className="card table-card">
+      {/* Specialists Table */}
+      <div className="card">
         <h2>All Specialists</h2>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Specialty</th>
-                <th>Hospital</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {specialists.length > 0 ? (
-                specialists.map((specialist) => (
-                  <tr key={specialist.id}>
-                    <td>{specialist.name || "N/A"}</td>
-                    <td>{specialist.specialty || "N/A"}</td>
-                    <td>{specialist.hospital || "N/A"}</td>
-                    <td>
-                      <div className="row-actions">
-                        <button onClick={() => handleEdit(specialist)}>Edit</button>
-                        <button className="danger" onClick={() => handleDelete(specialist.id)}>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="empty-row">
-                    No specialists found
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Specialty</th>
+              <th>Hospital</th>
+              <th>Department</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {specialists.length > 0 ? (
+              specialists.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.name}</td>
+                  <td>{s.specialty}</td>
+                  <td>{s.hospital_name || s.hospital || "N/A"}</td>
+                  <td>{s.department || "N/A"}</td>
+                  <td>
+                    <button onClick={() => handleEdit(s)}>Edit</button>
+                    <button className="danger" onClick={() => handleDelete(s.id)}>
+                      Delete
+                    </button>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5">No specialists found</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

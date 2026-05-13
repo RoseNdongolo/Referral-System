@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'doctors',
     'hospitals',
     'referrals',
-
+    'specialists',
+    'receptionists',
+    'dashboards',
     'rest_framework_simplejwt',
 ]
 
@@ -162,3 +164,5 @@ CORS_ALLOW_CREDENTIALS = True
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+GOOGLE_MAPS_API_KEY = "AIzaSyDummyTestKeyDoNotUseInProduction123456"
