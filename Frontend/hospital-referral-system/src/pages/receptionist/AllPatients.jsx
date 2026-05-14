@@ -1,65 +1,66 @@
-import { useState, useEffect } from "react";
-import { getAllPatients } from "../../services/receptionistService";
-import "./AllPatients.css";
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import receptionistService from '../../services/receptionistService';
+import './AllPatients.css';
 
 export default function AllPatients() {
   const [patients, setPatients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const data = await getAllPatients();
+    receptionistService.getAllPatients()
+      .then(res => {
+        const data = res.data.results || res.data;
         setPatients(data);
-        console.log("Patients data:", data); // Debug: see what backend returns
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPatients();
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
 
-  const filteredPatients = patients.filter((p) =>
-    (p.full_name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPatients = patients.filter(p =>
+    `${p.full_name || p.username} ${p.email} ${p.medical_record_number}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <p>Loading patients...</p>;
+  if (loading) return <div className="loading-state">Loading patients...</div>;
 
   return (
-    <div className="all-patients">
-      <div className="page-header">
-        <h1>All Patients</h1>
+    <div className="patients-container">
+      <h1>All Patients</h1>
+      <div className="search-bar">
         <input
           type="text"
-          placeholder="Search patients..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+          placeholder="Search by name, username, email, MRN..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
         />
       </div>
-
-      <div className="table-container">
-        <table>
+      <div className="patients-table-wrapper">
+        <table className="patients-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>MRN</th>
+              <th>Full Name</th>
+              <th>Username</th>
+              <th>Email</th>
               <th>Phone</th>
-              <th>National ID</th>
-              <th>Date Registered</th>
+              <th>Gender</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredPatients.map((patient) => (
-              <tr key={patient.id}>
-                <td>{patient.full_name || "Unnamed"}</td>
-                <td>{patient.phone_number || "—"}</td>
-                <td>{patient.national_id || "—"}</td>
-                <td>—</td>
-                <td><button className="btn-small">View</button></td>
+            {filteredPatients.map(p => (
+              <tr key={p.id}>
+                <td>{p.medical_record_number}</td>
+                <td>{p.full_name || `${p.first_name} ${p.last_name}`}</td>
+                <td>{p.username}</td>
+                <td>{p.email}</td>
+                <td>{p.phone_number || '-'}</td>
+                <td>{p.gender || '-'}</td>
+                <td>
+                  <Link to={`/receptionist/patients/${p.id}`} className="view-link">View</Link>
+                  {/* Edit/Delete could be added */}
+                </td>
               </tr>
             ))}
           </tbody>
