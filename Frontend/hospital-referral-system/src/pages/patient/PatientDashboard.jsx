@@ -40,25 +40,39 @@ export default function PatientDashboard() {
 
   return (
     <div className="dashboard-container">
+      {/* Welcome card */}
       <div className="welcome-card">
-        <h1>Welcome, {profile?.full_name || profile?.username}!</h1>
+        <h1>Welcome back, {profile?.full_name || profile?.username}!</h1>
+        <p>Manage your referrals and personal information</p>
       </div>
 
-      <div className="info-card">
-        <h2>Your Information</h2>
-        <p><strong>Medical Record #:</strong> {profile?.medical_record_number}</p>
-        <p><strong>Email:</strong> {profile?.email}</p>
-        <p><strong>Phone:</strong> {profile?.phone_number || 'Not provided'}</p>
-        <Link to="/patient/profile" className="edit-link">Edit Profile →</Link>
+      {/* Quick action cards for navigation */}
+      <div className="quick-actions">
+        <Link to="/patient/profile" className="action-card">
+          <div className="action-icon">👤</div>
+          <h3>My Profile</h3>
+          <p>View and edit your personal details</p>
+        </Link>
+        <Link to="/patient/my-referrals" className="action-card">
+          <div className="action-icon">📋</div>
+          <h3>My Referrals</h3>
+          <p>See all your referral history</p>
+        </Link>
+        <Link to="/patient/map" className="action-card">
+          <div className="action-icon">🗺️</div>
+          <h3>Navigation Map</h3>
+          <p>Get directions to referred hospitals</p>
+        </Link>
       </div>
 
+      {/* Recent referrals section */}
       <div className="info-card">
         <div className="flex-between">
           <h2>Recent Referrals</h2>
           <Link to="/patient/my-referrals" className="view-link">View all</Link>
         </div>
         {recentReferrals.length === 0 ? (
-          <p>No referrals yet.</p>
+          <p className="empty-text">No referrals yet.</p>
         ) : (
           <ul className="referral-list">
             {recentReferrals.map(ref => (

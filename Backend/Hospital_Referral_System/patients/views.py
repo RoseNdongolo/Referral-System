@@ -15,10 +15,6 @@ class PatientProfileViewSet(ModelViewSet):
     serializer_class = PatientProfileSerializer
 
     def get_permissions(self):
-        """
-        - create: only receptionists (or admins) – as per your document.
-        - list / retrieve / update / delete: staff OR the patient owner.
-        """
         if self.action == 'create':
             permission_classes = [IsAuthenticated, IsReceptionist]
         else:
@@ -26,11 +22,6 @@ class PatientProfileViewSet(ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def create(self, request, *args, **kwargs):
-        """
-        Create a new patient profile together with its associated User.
-        Receptionist-only endpoint.
-        """
-        # Extract user fields
         username = request.data.get('username')
         password = request.data.get('password')
         first_name = request.data.get('first_name', '')
@@ -44,7 +35,6 @@ class PatientProfileViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Create the User with role='patient'
         from accounts.models import User
         if User.objects.filter(username=username).exists():
             return Response(
@@ -58,11 +48,10 @@ class PatientProfileViewSet(ModelViewSet):
             first_name=first_name,
             last_name=last_name,
             email=email,
-            phone_number=phone_number,   # stored in User (can be removed later)
+            phone_number=phone_number,
             role='patient'
         )
 
-        # Prepare patient profile data
         date_of_birth = request.data.get('date_of_birth')
         if date_of_birth == '':
             date_of_birth = None
@@ -81,22 +70,96 @@ class PatientProfileViewSet(ModelViewSet):
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Rollback – delete the created user
             user.delete()
             return Response(
                 {"errors": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get', 'put', 'patch'], permission_classes=[IsAuthenticated])
+    @action(
+        detail=False,
+        methods=['get', 'put', 'patch', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def me(self, request):
-        """Get or update the logged‑in patient's own profile."""
         profile = get_object_or_404(PatientProfile, user=request.user)
+
         if request.method == 'GET':
             serializer = self.get_serializer(profile)
             return Response(serializer.data)
-        # PUT / PATCH
-        serializer = self.get_serializer(profile, data=request.data, partial=True)
+
+        elif request.method == 'DELETE':
+            user = request.user
+            profile.delete()
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # PUT or PATCH: update user and profile
+        user = request.user
+        user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username']
+
+        for field in user_fields:
+            if field in request.data:
+                val = request.data[field]
+                if isinstance(val, str):
+                    val = val.strip()
+                # For username, check uniqueness if changed
+                if field == 'username' and val != user.username:
+                    from accounts.models import User
+                    if User.objects.filter(username=val).exists():
+                        return Response(
+                            {'error': 'Username already taken'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                setattr(user, field, val)
+        user.save()
+
+        profile_fields = ['address', 'national_id', 'gender', 'date_of_birth']
+        profile_data = {}
+        for field in profile_fields:
+            if field in request.data:
+                val = request.data[field]
+                if val == '':
+                    val = None
+                profile_data[field] = val
+
+        serializer = self.get_serializer(profile, data=profile_data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+
+        return Response(self.get_serializer(profile).data)
+
+    @action(
+        detail=False,
+        methods=['post'],
+        permission_classes=[IsAuthenticated]
+    )
+    def change_password(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not old_password or not new_password:
+            return Response(
+                {'error': 'Old and new password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(old_password):
+            return Response(
+                {'error': 'Old password is incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'error': 'New password must be at least 8 characters'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response(
+            {'message': 'Password changed successfully'},
+            status=status.HTTP_200_OK
+        )

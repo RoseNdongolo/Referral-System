@@ -1,7 +1,7 @@
 /* Profile.css */
 
 .profile-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -29,8 +29,19 @@
   padding: 2rem;
 }
 
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .form-group {
+  flex: 1;
   margin-bottom: 1.25rem;
+}
+
+.form-group.half {
+  flex: 1;
 }
 
 .form-group label {
@@ -60,20 +71,54 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.readonly-field {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+small {
+  font-size: 0.7rem;
+  color: #64748b;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
 .submit-btn {
   background: linear-gradient(135deg, #2563eb, #1e40af);
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
-  width: 100%;
   border: none;
   cursor: pointer;
   transition: opacity 0.2s;
+  flex: 1;
 }
 
 .submit-btn:hover {
   opacity: 0.9;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: 1;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
 }
 
 .message-toast {
@@ -96,7 +141,80 @@
   border: 1px solid #fecaca;
 }
 
+.loading-state {
+  text-align: center;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 1rem;
+  color: #475569;
+}
+
 @media (max-width: 640px) {
-  .profile-card { padding: 1.25rem; }
-  .profile-header h1 { font-size: 1.5rem; }
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  .profile-card {
+    padding: 1.25rem;
+  }
+  .button-group {
+    flex-direction: column;
+  }
+}
+
+.profile-divider {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+.delete-section {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.delete-warning {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.5rem;
+}
+
+.secondary {
+  background: linear-gradient(135deg, #64748b, #475569);
+  margin-top: 0.5rem;
+}
+
+small {
+  font-size: 0.7rem;
+  color: #64748b;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Password toggle wrapper */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  flex: 1;
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+  color: #64748b;
+}
+
+.toggle-password:hover {
+  color: #2563eb;
 }
