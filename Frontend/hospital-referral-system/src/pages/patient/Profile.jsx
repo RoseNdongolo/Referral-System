@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import patientService from '../../services/patientService';
 import './Profile.css';
@@ -34,6 +34,11 @@ export default function Profile() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Refs to manually override autofill (optional)
+  const oldPasswordRef = useRef(null);
+  const newPasswordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+
   useEffect(() => {
     patientService.getMyProfile()
       .then(res => {
@@ -60,6 +65,11 @@ export default function Profile() {
 
   const handlePasswordChange = (e) => {
     setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+  };
+
+  // HACK: Disable autofill by making input readonly then enable on focus
+  const handlePasswordFocus = (e) => {
+    e.target.removeAttribute('readonly');
   };
 
   const handleSubmit = async (e) => {
@@ -99,6 +109,7 @@ export default function Profile() {
       return;
     }
     try {
+      // This API call uses the logged-in patient's token – only changes their own password
       await patientService.changePassword({
         old_password: passwordData.old_password,
         new_password: passwordData.new_password,
@@ -142,32 +153,27 @@ export default function Profile() {
             {message}
           </div>
         )}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           <div className="form-group">
             <label>Username</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-            />
+            <input type="text" name="username" value={formData.username} onChange={handleChange} autoComplete="off" />
             <small>Changing your username will affect login</small>
           </div>
 
           <div className="form-row">
             <div className="form-group half">
               <label>First Name</label>
-              <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} />
+              <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} autoComplete="off" />
             </div>
             <div className="form-group half">
               <label>Last Name</label>
-              <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} />
+              <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} autoComplete="off" />
             </div>
           </div>
 
           <div className="form-group">
             <label>Email Address</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} />
+            <input type="email" name="email" value={formData.email} onChange={handleChange} autoComplete="off" />
           </div>
 
           <div className="form-group">
@@ -178,17 +184,17 @@ export default function Profile() {
 
           <div className="form-group">
             <label>Phone Number</label>
-            <input type="text" name="phone_number" value={formData.phone_number} onChange={handleChange} />
+            <input type="text" name="phone_number" value={formData.phone_number} onChange={handleChange} autoComplete="off" />
           </div>
 
           <div className="form-group">
             <label>Address</label>
-            <textarea name="address" value={formData.address} onChange={handleChange} />
+            <textarea name="address" value={formData.address} onChange={handleChange} autoComplete="off"></textarea>
           </div>
 
           <div className="form-group">
             <label>National ID</label>
-            <input type="text" name="national_id" value={formData.national_id} onChange={handleChange} />
+            <input type="text" name="national_id" value={formData.national_id} onChange={handleChange} autoComplete="off" />
           </div>
 
           <div className="form-row">
@@ -203,7 +209,7 @@ export default function Profile() {
             </div>
             <div className="form-group half">
               <label>Date of Birth</label>
-              <input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} />
+              <input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} autoComplete="off" />
             </div>
           </div>
 
@@ -212,16 +218,24 @@ export default function Profile() {
 
         <hr className="profile-divider" />
         <h3>Change Password</h3>
-        <form onSubmit={handlePasswordSubmit}>
+        <form onSubmit={handlePasswordSubmit} autoComplete="off">
+          {/* Dummy hidden fields to trick browser (optional but effective) */}
+          <input type="text" name="fakeusername" style={{ display: 'none' }} autoComplete="off" />
+          <input type="password" name="fakepassword" style={{ display: 'none' }} autoComplete="off" />
+
           <div className="form-group">
             <label>Current Password</label>
             <div className="password-input-wrapper">
               <input
+                ref={oldPasswordRef}
                 type={showCurrentPassword ? "text" : "password"}
                 name="old_password"
                 value={passwordData.old_password}
                 onChange={handlePasswordChange}
                 required
+                autoComplete="off"
+                readOnly   // prevents autofill; will be removed on focus
+                onFocus={handlePasswordFocus}
               />
               <button
                 type="button"
@@ -238,11 +252,15 @@ export default function Profile() {
             <label>New Password</label>
             <div className="password-input-wrapper">
               <input
+                ref={newPasswordRef}
                 type={showNewPassword ? "text" : "password"}
                 name="new_password"
                 value={passwordData.new_password}
                 onChange={handlePasswordChange}
                 required
+                autoComplete="new-password"   // key: tells browser this is a new password, not existing
+                readOnly
+                onFocus={handlePasswordFocus}
               />
               <button
                 type="button"
@@ -260,11 +278,15 @@ export default function Profile() {
             <label>Confirm New Password</label>
             <div className="password-input-wrapper">
               <input
+                ref={confirmPasswordRef}
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirm_password"
                 value={passwordData.confirm_password}
                 onChange={handlePasswordChange}
                 required
+                autoComplete="new-password"
+                readOnly
+                onFocus={handlePasswordFocus}
               />
               <button
                 type="button"

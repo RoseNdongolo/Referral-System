@@ -1,4 +1,4 @@
-# views.py (complete, merged version)
+# views.py
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,7 +11,7 @@ import logging
 from accounts.permissions import IsReceptionist, IsPatientOwner
 from .models import PatientProfile, Consultation
 from .serializers import (
-    PatientProfileSerializer, 
+    PatientProfileSerializer,
     PatientRegistrationSerializer,
     UnassignedPatientSerializer,
     ActiveDoctorSerializer,
@@ -23,12 +23,6 @@ User = get_user_model()
 
 
 class PatientProfileViewSet(ModelViewSet):
-    """
-    Complete ViewSet for PatientProfile.
-    - Handles CRUD for patient profiles.
-    - Receptionist can create, update, delete any patient.
-    - Patients can only access their own profile via /me/.
-    """
     queryset = PatientProfile.objects.select_related('user').all()
     serializer_class = PatientProfileSerializer
 
@@ -38,18 +32,17 @@ class PatientProfileViewSet(ModelViewSet):
         return PatientProfileSerializer
 
     def get_permissions(self):
-        # Receptionist can create, update, delete any patient
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsAuthenticated, IsReceptionist]
         elif self.action in ['me', 'change_password']:
             permission_classes = [IsAuthenticated, IsPatientOwner]
-        elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient']:
+        elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient', 'assigned_patients']:
             permission_classes = [IsAuthenticated, IsReceptionist]
         else:
             permission_classes = [IsAuthenticated, IsPatientOwner]
         return [permission() for permission in permission_classes]
 
-    # ==================== Standard CRUD actions ====================
+    # ==================== Standard CRUD ====================
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -66,7 +59,6 @@ class PatientProfileViewSet(ModelViewSet):
         profile = self.get_object()
         user = profile.user
 
-        # Update user fields from request data
         user_fields = ['first_name', 'last_name', 'email', 'username']
         for field in user_fields:
             if field in request.data:
@@ -77,13 +69,12 @@ class PatientProfileViewSet(ModelViewSet):
                 setattr(user, field, val)
         user.save()
 
-        # Update profile fields
         serializer = self.get_serializer(profile, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    # ==================== Patient self‑service actions ====================
+    # ==================== Patient self‑service ====================
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
         profile = get_object_or_404(PatientProfile, user=request.user)
@@ -96,7 +87,6 @@ class PatientProfileViewSet(ModelViewSet):
             request.user.delete()
             return Response(status=204)
 
-        # PUT or PATCH – update user and profile
         user = request.user
         user_fields = ['first_name', 'last_name', 'email', 'username']
         for field in user_fields:
@@ -142,7 +132,6 @@ class PatientProfileViewSet(ModelViewSet):
     # ==================== Receptionist assignment actions ====================
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
     def unassigned_patients(self, request):
-        """Return patients with no ongoing consultation."""
         patients_with_open_consult = Consultation.objects.filter(
             status__in=['assigned', 'in_progress']
         ).values_list('patient_id', flat=True)
@@ -152,14 +141,12 @@ class PatientProfileViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
     def active_doctors(self, request):
-        """Return all active doctors."""
         doctors = User.objects.filter(role='doctor', is_active=True)
         serializer = ActiveDoctorSerializer(doctors, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsReceptionist])
     def assign_patient(self, request):
-        """Assign a patient to a doctor (creates a consultation)."""
         serializer = AssignPatientSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             consultation = serializer.save()
@@ -168,3 +155,23 @@ class PatientProfileViewSet(ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
+    def assigned_patients(self, request):
+        """Return all consultations (assigned patients) with patient and doctor details."""
+        consultations = Consultation.objects.select_related('patient', 'doctor', 'assigned_by').all().order_by('-assigned_at')
+        data = []
+        for c in consultations:
+            data.append({
+                'id': c.id,
+                'patient_id': c.patient.id,
+                'patient_name': f"{c.patient.first_name} {c.patient.last_name}".strip() or c.patient.username,
+                'patient_mrn': getattr(c.patient.patient_profile, 'medical_record_number', 'N/A'),
+                'doctor_id': c.doctor.id,
+                'doctor_name': f"Dr. {c.doctor.first_name} {c.doctor.last_name}".strip() or c.doctor.username,
+                'status': c.get_status_display(),
+                'assigned_at': c.assigned_at.strftime('%Y-%m-%d %H:%M'),
+                'chief_complaint': c.chief_complaint or '',
+                'notes': c.notes or '',
+            })
+        return Response(data)

@@ -16,6 +16,7 @@ export default function Sidebar() {
     { to: "/receptionist/register-patient", label: "Register Patient" },
     { to: "/receptionist/patients", label: "All Patients" },
     { to: "/receptionist/patients/:id/assign", label: "Assign Patient" },
+    { to: "/receptionist/assigned-patients", label: "Assigned Patients" },
     { to: "/receptionist/referrals", label: "Referrals" },
     { to: "/receptionist/profile", label: "Profile" },
   ];
