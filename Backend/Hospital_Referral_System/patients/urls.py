@@ -1,3 +1,4 @@
+# urls.py (inside the patients app)
 from rest_framework.routers import DefaultRouter
 from .views import PatientProfileViewSet
 

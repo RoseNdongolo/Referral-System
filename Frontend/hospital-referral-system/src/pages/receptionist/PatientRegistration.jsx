@@ -21,8 +21,6 @@ export default function PatientRegistration() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
-
-  // Password visibility toggles
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -50,7 +48,10 @@ export default function PatientRegistration() {
     if (!validate()) return;
     setLoading(true);
     setSuccess('');
+    setErrors({});
+
     const { confirm_password, ...dataToSend } = formData;
+
     try {
       await receptionistService.registerPatient(dataToSend);
       setSuccess('Patient registered successfully!');
@@ -60,8 +61,22 @@ export default function PatientRegistration() {
       });
       setTimeout(() => navigate('/receptionist/patients'), 2000);
     } catch (err) {
-      const backendErrors = err.response?.data?.errors || err.response?.data;
-      setErrors(backendErrors || { general: 'Registration failed. Please try again.' });
+      const backendData = err.response?.data;
+      if (backendData && typeof backendData === 'object') {
+        const formattedErrors = {};
+        for (const [key, value] of Object.entries(backendData)) {
+          if (Array.isArray(value)) {
+            formattedErrors[key] = value[0];
+          } else if (typeof value === 'string') {
+            formattedErrors[key] = value;
+          } else {
+            formattedErrors[key] = 'Invalid value';
+          }
+        }
+        setErrors(formattedErrors);
+      } else {
+        setErrors({ general: 'Registration failed. Please try again.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -75,7 +90,9 @@ export default function PatientRegistration() {
         <p className="note">The patient can change their password later from their profile.</p>
       </div>
 
+      {/* CRITICAL: autocomplete="off" prevents browser from filling receptionist data */}
       <form onSubmit={handleSubmit} className="registration-form" autoComplete="off">
+        {/* Login Credentials Section */}
         <div className="form-section">
           <h3>Login Credentials</h3>
           <div className="form-row">
@@ -86,7 +103,6 @@ export default function PatientRegistration() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="e.g., john_doe"
                 autoComplete="off"
               />
               {errors.username && <span className="error">{errors.username}</span>}
@@ -98,7 +114,6 @@ export default function PatientRegistration() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="patient@example.com"
                 autoComplete="off"
               />
               {errors.email && <span className="error">{errors.email}</span>}
@@ -113,14 +128,12 @@ export default function PatientRegistration() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Temporary password"
-                  autoComplete="new-password"
+                  autoComplete="new-password"   // prevents browser from filling
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
@@ -135,14 +148,12 @@ export default function PatientRegistration() {
                   name="confirm_password"
                   value={formData.confirm_password}
                   onChange={handleChange}
-                  placeholder="Repeat password"
-                  autoComplete="off"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label="Toggle confirm password visibility"
                 >
                   {showConfirmPassword ? 'Hide' : 'Show'}
                 </button>
@@ -152,6 +163,7 @@ export default function PatientRegistration() {
           </div>
         </div>
 
+        {/* Personal Information Section */}
         <div className="form-section">
           <h3>Personal Information</h3>
           <div className="form-row">
