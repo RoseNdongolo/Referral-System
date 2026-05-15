@@ -36,7 +36,7 @@ class PatientProfileViewSet(ModelViewSet):
             permission_classes = [IsAuthenticated, IsReceptionist]
         elif self.action in ['me', 'change_password']:
             permission_classes = [IsAuthenticated, IsPatientOwner]
-        elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient', 'assigned_patients']:
+        elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient', 'assigned_patients', 'unassign']:
             permission_classes = [IsAuthenticated, IsReceptionist]
         else:
             permission_classes = [IsAuthenticated, IsPatientOwner]
@@ -175,3 +175,20 @@ class PatientProfileViewSet(ModelViewSet):
                 'notes': c.notes or '',
             })
         return Response(data)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsReceptionist])
+    def unassign(self, request, pk=None):
+        """
+        Delete a consultation (unassign patient from doctor).
+        The pk here is the consultation ID, not the patient profile ID.
+        """
+        try:
+            consultation = Consultation.objects.get(pk=pk)
+            patient_name = consultation.patient.get_full_name() or consultation.patient.username
+            doctor_name = consultation.doctor.get_full_name() or consultation.doctor.username
+            consultation.delete()
+            return Response({
+                "message": f"Patient {patient_name} has been unassigned from Dr. {doctor_name}"
+            }, status=status.HTTP_200_OK)
+        except Consultation.DoesNotExist:
+            return Response({"error": "Consultation not found"}, status=status.HTTP_404_NOT_FOUND)

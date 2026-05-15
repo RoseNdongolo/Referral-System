@@ -28,7 +28,6 @@ export default function ReceptionistDashboard() {
           pendingReferrals: referrals.filter(r => r.status === 'pending').length,
         });
 
-        // Show last 5 patients (by id descending – assume newer have higher id)
         const recent = [...patients].reverse().slice(0, 5);
         setRecentPatients(recent);
         setRecentReferrals(referrals.slice(-5).reverse());
@@ -77,7 +76,11 @@ export default function ReceptionistDashboard() {
           <h3>Assign Patient</h3>
           <p>Assign patient to a doctor</p>
         </Link>
-        
+        <Link to="/receptionist/assigned-patients" className="action-card">
+          <div className="action-icon">📌</div>
+          <h3>Assigned Patients</h3>
+          <p>View patients assigned to doctors</p>
+        </Link>
         <Link to="/receptionist/referrals" className="action-card">
           <div className="action-icon">🔄</div>
           <h3>Referrals</h3>
@@ -89,11 +92,6 @@ export default function ReceptionistDashboard() {
           <p>Update your personal information</p>
         </Link>
       </div>
-        <Link to="/receptionist/assigned-patients" className="action-card">
-          <div className="action-icon">📌</div>
-          <h3>Assigned Patients</h3>
-          <p>View patients assigned to doctors</p>
-        </Link>
 
       <div className="info-card">
         <h2>Recently Registered Patients</h2>

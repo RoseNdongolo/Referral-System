@@ -39,3 +39,33 @@
 .status-in-progress { background: #dbeafe; color: #1e40af; }
 .status-completed { background: #dcfce7; color: #166534; }
 .status-referred-out { background: #f1f5f9; color: #475569; }
+
+.unassign-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+.unassign-btn:hover {
+  background-color: #dc2626;
+}
+.toast-message {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+.toast-success {
+  background-color: #dcfce7;
+  color: #166534;
+  border-left: 4px solid #22c55e;
+}
+.toast-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}

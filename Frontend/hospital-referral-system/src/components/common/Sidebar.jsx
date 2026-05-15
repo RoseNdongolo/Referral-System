@@ -11,15 +11,15 @@ export default function Sidebar() {
   console.log("ROLE:", user?.role);
 
   // ================= RECEPTIONIST =================
-  const receptionistLinks = [
-    { to: "/receptionist", label: "Dashboard" },
-    { to: "/receptionist/register-patient", label: "Register Patient" },
-    { to: "/receptionist/patients", label: "All Patients" },
-    { to: "/receptionist/patients/:id/assign", label: "Assign Patient" },
-    { to: "/receptionist/assigned-patients", label: "Assigned Patients" },
-    { to: "/receptionist/referrals", label: "Referrals" },
-    { to: "/receptionist/profile", label: "Profile" },
-  ];
+const receptionistLinks = [
+  { to: "/receptionist", label: "Dashboard" },
+  { to: "/receptionist/register-patient", label: "Register Patient" },
+  { to: "/receptionist/patients", label: "All Patients" },
+  { to: "/receptionist/assign-patient", label: "Assign Patient" },       // corrected path
+  { to: "/receptionist/assigned-patients", label: "Assigned Patients" }, // added
+  { to: "/receptionist/referrals", label: "Referrals" },
+  { to: "/receptionist/profile", label: "Profile" },
+];
 
   // ================= DOCTOR =================
   const doctorLinks = [
