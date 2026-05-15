@@ -5,7 +5,7 @@ import './ReceptionistDashboard.css';
 
 export default function ReceptionistDashboard() {
   const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState({ patientsToday: 0, totalPatients: 0, pendingReferrals: 0 });
+  const [stats, setStats] = useState({ totalPatients: 0, pendingReferrals: 0 });
   const [recentPatients, setRecentPatients] = useState([]);
   const [recentReferrals, setRecentReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,16 +23,14 @@ export default function ReceptionistDashboard() {
         const patients = patientsRes.data.results || patientsRes.data;
         const referrals = referralsRes.data.results || referralsRes.data;
 
-        const today = new Date().toISOString().slice(0,10);
-        const patientsToday = patients.filter(p => p.created_at?.slice(0,10) === today).length;
-
         setStats({
-          patientsToday,
           totalPatients: patients.length,
           pendingReferrals: referrals.filter(r => r.status === 'pending').length,
         });
 
-        setRecentPatients(patients.slice(-5).reverse());
+        // Show last 5 patients (by id descending – assume newer have higher id)
+        const recent = [...patients].reverse().slice(0, 5);
+        setRecentPatients(recent);
         setRecentReferrals(referrals.slice(-5).reverse());
       } catch (err) {
         console.error(err);
@@ -54,10 +52,6 @@ export default function ReceptionistDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-value">{stats.patientsToday}</div>
-          <div className="stat-label">Patients Registered Today</div>
-        </div>
-        <div className="stat-card">
           <div className="stat-value">{stats.totalPatients}</div>
           <div className="stat-label">Total Patients</div>
         </div>
@@ -77,6 +71,11 @@ export default function ReceptionistDashboard() {
           <div className="action-icon">📋</div>
           <h3>All Patients</h3>
           <p>View and manage patient records</p>
+        </Link>
+        <Link to="/receptionist/assign-patient" className="action-card">
+          <div className="action-icon">👥</div>
+          <h3>Assign Patient</h3>
+          <p>Assign patient to a doctor</p>
         </Link>
         <Link to="/receptionist/referrals" className="action-card">
           <div className="action-icon">🔄</div>
@@ -98,7 +97,7 @@ export default function ReceptionistDashboard() {
           <ul className="recent-list">
             {recentPatients.map(p => (
               <li key={p.id}>
-                {p.full_name || p.username} – {new Date(p.created_at).toLocaleDateString()}
+                {p.full_name || p.username} – {p.medical_record_number || 'No MRN'}
               </li>
             ))}
           </ul>
@@ -113,7 +112,7 @@ export default function ReceptionistDashboard() {
           <ul className="recent-list">
             {recentReferrals.map(r => (
               <li key={r.id}>
-                {r.patient_name || r.patient?.username} → {r.hospital_details?.name} ({r.status})
+                {r.patient_name || r.patient?.username} → {r.hospital_details?.name || 'External'} ({r.status})
               </li>
             ))}
           </ul>

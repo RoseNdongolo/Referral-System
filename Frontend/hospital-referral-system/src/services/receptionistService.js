@@ -13,6 +13,9 @@ const receptionistService = {
   updatePatient: (id, data) => api.put(`/patients/patient-profiles/${id}/`, data),
   deletePatient: (id) => api.delete(`/patients/patient-profiles/${id}/`),
 
+  getUnassignedPatients: () => api.get('/patients/patient-profiles/unassigned_patients/'),
+  getActiveDoctors: () => api.get('/patients/patient-profiles/active_doctors/'),
+  assignPatient: (data) => api.post('/patients/patient-profiles/assign_patient/', data),
   // Referrals
   getAllReferrals: () => api.get('/referrals/referrals/'),
 };

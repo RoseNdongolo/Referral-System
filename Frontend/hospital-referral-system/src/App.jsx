@@ -17,6 +17,7 @@ import AllPatients from "./pages/receptionist/AllPatients.jsx";
 import ReceptionistReferrals from "./pages/receptionist/ReceptionistReferrals.jsx";
 import ReceptionistProfile from "./pages/receptionist/ReceptionistProfile.jsx";
 import EditPatient from "./pages/receptionist/EditPatient.jsx";
+import AssignPatient from "./pages/receptionist/AssignPatient.jsx";
 
 // Doctor Pages
 import DoctorDashboard from "./pages/doctor/DoctorDashboard.jsx";
@@ -61,6 +62,7 @@ function App() {
             <Route path="/receptionist/referrals" element={<ReceptionistReferrals />} />
             <Route path="/receptionist/profile" element={<ReceptionistProfile />} />
             <Route path="/receptionist/patients/:id/edit" element={<EditPatient />} />
+            <Route path="/receptionist/assign-patient" element={<AssignPatient />} /> 
           </Route>
 
           {/* ====================== DOCTOR ROUTES ====================== */}

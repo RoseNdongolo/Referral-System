@@ -1,4 +1,4 @@
-# views.py
+# views.py (complete, merged version)
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,15 +9,28 @@ from django.contrib.auth import get_user_model
 import logging
 
 from accounts.permissions import IsReceptionist, IsPatientOwner
-from .models import PatientProfile
-from .serializers import PatientProfileSerializer, PatientRegistrationSerializer
+from .models import PatientProfile, Consultation
+from .serializers import (
+    PatientProfileSerializer, 
+    PatientRegistrationSerializer,
+    UnassignedPatientSerializer,
+    ActiveDoctorSerializer,
+    AssignPatientSerializer
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
 class PatientProfileViewSet(ModelViewSet):
+    """
+    Complete ViewSet for PatientProfile.
+    - Handles CRUD for patient profiles.
+    - Receptionist can create, update, delete any patient.
+    - Patients can only access their own profile via /me/.
+    """
     queryset = PatientProfile.objects.select_related('user').all()
+    serializer_class = PatientProfileSerializer
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -28,11 +41,15 @@ class PatientProfileViewSet(ModelViewSet):
         # Receptionist can create, update, delete any patient
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsAuthenticated, IsReceptionist]
+        elif self.action in ['me', 'change_password']:
+            permission_classes = [IsAuthenticated, IsPatientOwner]
+        elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient']:
+            permission_classes = [IsAuthenticated, IsReceptionist]
         else:
-            # 'me' action should be for the patient only
             permission_classes = [IsAuthenticated, IsPatientOwner]
         return [permission() for permission in permission_classes]
 
+    # ==================== Standard CRUD actions ====================
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -44,8 +61,6 @@ class PatientProfileViewSet(ModelViewSet):
             logger.exception("Patient registration failed")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # Receptionist can update any patient via the default update method (permission changed)
-    # But we need to ensure user fields are also updated. Override update method.
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         profile = self.get_object()
@@ -68,8 +83,7 @@ class PatientProfileViewSet(ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    # Delete is handled by default destroy (permission changed)
-
+    # ==================== Patient self‑service actions ====================
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
         profile = get_object_or_404(PatientProfile, user=request.user)
@@ -82,6 +96,7 @@ class PatientProfileViewSet(ModelViewSet):
             request.user.delete()
             return Response(status=204)
 
+        # PUT or PATCH – update user and profile
         user = request.user
         user_fields = ['first_name', 'last_name', 'email', 'username']
         for field in user_fields:
@@ -123,3 +138,33 @@ class PatientProfileViewSet(ModelViewSet):
         user.set_password(new_password)
         user.save()
         return Response({'message': 'Password changed successfully'})
+
+    # ==================== Receptionist assignment actions ====================
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
+    def unassigned_patients(self, request):
+        """Return patients with no ongoing consultation."""
+        patients_with_open_consult = Consultation.objects.filter(
+            status__in=['assigned', 'in_progress']
+        ).values_list('patient_id', flat=True)
+        patients = User.objects.filter(role='patient', is_active=True).exclude(id__in=patients_with_open_consult)
+        serializer = UnassignedPatientSerializer(patients, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
+    def active_doctors(self, request):
+        """Return all active doctors."""
+        doctors = User.objects.filter(role='doctor', is_active=True)
+        serializer = ActiveDoctorSerializer(doctors, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsReceptionist])
+    def assign_patient(self, request):
+        """Assign a patient to a doctor (creates a consultation)."""
+        serializer = AssignPatientSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            consultation = serializer.save()
+            return Response(
+                {"message": "Patient assigned successfully", "consultation_id": consultation.id},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
