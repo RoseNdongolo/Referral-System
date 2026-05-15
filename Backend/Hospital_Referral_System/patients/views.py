@@ -1,4 +1,4 @@
-# views.py
+# views.py (patients app) – final corrected version
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,14 +8,15 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 import logging
 
-from accounts.permissions import IsReceptionist, IsPatientOwner
+from accounts.permissions import IsReceptionist, IsPatientOwner, IsDoctor
 from .models import PatientProfile, Consultation
 from .serializers import (
     PatientProfileSerializer,
     PatientRegistrationSerializer,
     UnassignedPatientSerializer,
     ActiveDoctorSerializer,
-    AssignPatientSerializer
+    AssignPatientSerializer,
+    ConsultationSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,8 @@ class PatientProfileViewSet(ModelViewSet):
             permission_classes = [IsAuthenticated, IsPatientOwner]
         elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient', 'assigned_patients', 'unassign']:
             permission_classes = [IsAuthenticated, IsReceptionist]
+        elif self.action in ['my_consultations', 'update_consultation_status', 'consultation_detail']:
+            permission_classes = [IsAuthenticated, IsDoctor]
         else:
             permission_classes = [IsAuthenticated, IsPatientOwner]
         return [permission() for permission in permission_classes]
@@ -129,7 +132,7 @@ class PatientProfileViewSet(ModelViewSet):
         user.save()
         return Response({'message': 'Password changed successfully'})
 
-    # ==================== Receptionist assignment actions ====================
+    # ==================== Receptionist actions ====================
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
     def unassigned_patients(self, request):
         patients_with_open_consult = Consultation.objects.filter(
@@ -158,7 +161,6 @@ class PatientProfileViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsReceptionist])
     def assigned_patients(self, request):
-        """Return all consultations (assigned patients) with patient and doctor details."""
         consultations = Consultation.objects.select_related('patient', 'doctor', 'assigned_by').all().order_by('-assigned_at')
         data = []
         for c in consultations:
@@ -178,10 +180,6 @@ class PatientProfileViewSet(ModelViewSet):
 
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsReceptionist])
     def unassign(self, request, pk=None):
-        """
-        Delete a consultation (unassign patient from doctor).
-        The pk here is the consultation ID, not the patient profile ID.
-        """
         try:
             consultation = Consultation.objects.get(pk=pk)
             patient_name = consultation.patient.get_full_name() or consultation.patient.username
@@ -192,3 +190,26 @@ class PatientProfileViewSet(ModelViewSet):
             }, status=status.HTTP_200_OK)
         except Consultation.DoesNotExist:
             return Response({"error": "Consultation not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # ==================== Doctor actions ====================
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
+    def my_consultations(self, request):
+        consultations = Consultation.objects.filter(doctor=request.user).order_by('-assigned_at')
+        serializer = ConsultationSerializer(consultations, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsDoctor])
+    def update_consultation_status(self, request, pk=None):
+        consultation = get_object_or_404(Consultation, pk=pk, doctor=request.user)
+        new_status = request.data.get('status')
+        if new_status not in dict(Consultation.STATUS_CHOICES):
+            return Response({'error': 'Invalid status'}, status=400)
+        consultation.status = new_status
+        consultation.save()
+        return Response({'status': consultation.status})
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
+    def consultation_detail(self, request, pk=None):
+        consultation = get_object_or_404(Consultation, pk=pk, doctor=request.user)
+        serializer = ConsultationSerializer(consultation)
+        return Response(serializer.data)

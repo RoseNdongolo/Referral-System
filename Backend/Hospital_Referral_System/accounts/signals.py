@@ -1,8 +1,13 @@
+# accounts/signals.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import User, MedicalDirectorProfile
+from django.contrib.auth import get_user_model
 from receptionists.models import ReceptionistProfile
-from patients.models import PatientProfile  # ensure PatientProfile exists
+from patients.models import PatientProfile
+from doctors.models import DoctorProfile
+from .models import MedicalDirectorProfile   # or wherever MedicalDirectorProfile lives
+
+User = get_user_model()
 
 @receiver(post_save, sender=User)
 def create_related_profile(sender, instance, created, **kwargs):
@@ -22,4 +27,14 @@ def create_related_profile(sender, instance, created, **kwargs):
                 user=instance,
                 defaults={"medical_record_number": f"MRN-{instance.id}"}
             )
-        # Add other roles (doctor, admin) if needed
+        elif instance.role == "doctor":
+            DoctorProfile.objects.get_or_create(
+                user=instance,
+                defaults={
+                    "specialization": "General",
+                    "license_number": f"LIC-{instance.id}",
+                    "years_of_experience": 0,
+                    "is_available": True
+                }
+            )
+        # Add other roles (admin, etc.) if needed

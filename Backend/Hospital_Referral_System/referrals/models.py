@@ -10,27 +10,32 @@ class Referral(models.Model):
         ('completed', 'Completed'),
     )
 
+    # Link to consultation (new)
+    consultation = models.ForeignKey(
+        'patients.Consultation',
+        on_delete=models.CASCADE,
+        related_name='referrals',
+        null=True, blank=True
+    )
     patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='patient_referrals')
     doctor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='doctor_referrals')
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='referrals')
-    
+
     # Clinical info
     diagnosis = models.TextField()
     clinical_notes = models.TextField(blank=True, null=True)
     test_results = models.TextField(blank=True, null=True)
     referral_reason = models.TextField()
-    
-    # NEW: The specialty/department required for this referral
-    required_specialty = models.CharField(max_length=100, help_text="e.g., Cardiology, Orthopedics")
-    
+    required_specialty = models.CharField(max_length=100)
+
     status = models.CharField(max_length=20, choices=REFERRAL_STATUS, default='pending')
-    
-    # GIS / navigation data (to be filled by Google Maps API)
+
+    # GIS / navigation data
     distance_km = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    estimated_travel_time_minutes = models.IntegerField(blank=True, null=True)  # Changed from DurationField for simplicity
-    route_info = models.TextField(blank=True, null=True)   # JSON or polyline
-    traffic_info = models.TextField(blank=True, null=True) # JSON with real‑time data
-    
+    estimated_travel_time_minutes = models.IntegerField(blank=True, null=True)
+    route_info = models.TextField(blank=True, null=True)
+    traffic_info = models.TextField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

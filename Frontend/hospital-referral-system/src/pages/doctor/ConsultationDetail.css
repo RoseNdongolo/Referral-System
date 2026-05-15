@@ -1,0 +1,68 @@
+.consultation-detail-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.info-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.update-btn {
+  margin-left: 1rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.3rem 1rem;
+  border-radius: 40px;
+  cursor: pointer;
+}
+
+.referral-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 40px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.referral-form {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.referral-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.referral-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.referral-form input,
+.referral-form textarea,
+.referral-form select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.submit-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+}

@@ -1,8 +1,8 @@
-from django.urls import path
+# doctors/urls.py
 from rest_framework.routers import DefaultRouter
 from .views import DoctorProfileViewSet
 
 router = DefaultRouter()
-router.register(r'doctors', DoctorProfileViewSet, basename='doctors')
+router.register(r'', DoctorProfileViewSet, basename='doctor')   # empty prefix, not 'doctors'
 
 urlpatterns = router.urls

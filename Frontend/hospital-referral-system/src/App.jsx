@@ -4,7 +4,7 @@ import Login from "./pages/auth/Login.jsx";
 import Register from "./pages/auth/Register.jsx";
 import ForgotPassword from "./pages/auth/ForgotPassword.jsx";
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
-import Unauthorized from "./pages/Unauthorized.jsx";   // <-- import
+import Unauthorized from "./pages/Unauthorized.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import RoleRoute from "./routes/RoleRoute.jsx";
@@ -22,6 +22,12 @@ import AssignedPatients from "./pages/receptionist/AssignedPatients.jsx";
 
 // Doctor Pages
 import DoctorDashboard from "./pages/doctor/DoctorDashboard.jsx";
+import MyPatients from "./pages/doctor/MyPatients.jsx";
+import ConsultationDetail from "./pages/doctor/ConsultationDetail.jsx";
+import NewReferral from "./pages/doctor/NewReferral.jsx";
+import ReferralHistory from "./pages/doctor/ReferralHistory.jsx";
+import ReferralDetail from "./pages/doctor/ReferralDetail.jsx";
+import DoctorProfile from "./pages/doctor/DoctorProfile.jsx";
 
 // Medical Director Pages
 import MedicalDirectorDashboard from "./pages/medicalDirector/MedicalDirectorDashboard.jsx";
@@ -49,7 +55,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:uidb64/:token" element={<ResetPassword />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />   {/* ✅ outside dashboard */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
       </Route>
 
       {/* Protected Routes (any authenticated user) */}
@@ -63,20 +69,22 @@ function App() {
             <Route path="/receptionist/referrals" element={<ReceptionistReferrals />} />
             <Route path="/receptionist/profile" element={<ReceptionistProfile />} />
             <Route path="/receptionist/patients/:id/edit" element={<EditPatient />} />
-            <Route path="/receptionist/assign-patient" element={<AssignPatient />} /> 
+            <Route path="/receptionist/assign-patient" element={<AssignPatient />} />
             <Route path="/receptionist/assigned-patients" element={<AssignedPatients />} />
           </Route>
 
           {/* ====================== DOCTOR ROUTES ====================== */}
           <Route element={<RoleRoute allowedRoles={["doctor"]} />}>
             <Route path="/doctor" element={<DoctorDashboard />} />
-            <Route path="/doctor/patients" element={<div>Doctor Patients Page (Coming Soon)</div>} />
-            <Route path="/doctor/diagnosis" element={<div>Diagnosis Page (Coming Soon)</div>} />
-            <Route path="/doctor/referral" element={<div>New Referral (Coming Soon)</div>} />
-            <Route path="/doctor/referral-history" element={<div>Referral History (Coming Soon)</div>} />
+            <Route path="/doctor/patients" element={<MyPatients />} />
+            <Route path="/doctor/consultation/:id" element={<ConsultationDetail />} />
+            <Route path="/doctor/referral" element={<NewReferral />} />
+            <Route path="/doctor/referral-history" element={<ReferralHistory />} />
+            <Route path="/doctor/referrals/:id" element={<ReferralDetail />} />
+            <Route path="/doctor/profile" element={<DoctorProfile />} />
           </Route>
 
-          {/* ====================== MEDICAL DIRECTOR ROUTES ====================== */}d
+          {/* ====================== MEDICAL DIRECTOR ROUTES ====================== */}
           <Route element={<RoleRoute allowedRoles={["medical_director"]} />}>
             <Route path="/medical-director" element={<MedicalDirectorDashboard />} />
             <Route path="/medical-director/doctors" element={<div>Manage Doctors (Coming Soon)</div>} />

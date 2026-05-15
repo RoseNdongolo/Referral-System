@@ -23,12 +23,12 @@ const receptionistLinks = [
 
   // ================= DOCTOR =================
   const doctorLinks = [
-    { to: "/doctor", label: "Dashboard" },
-    { to: "/doctor/patients", label: "My Patients" },
-    { to: "/doctor/diagnosis", label: "Diagnosis" },
-    { to: "/doctor/referral", label: "New Referral" },
-    { to: "/doctor/referral-history", label: "Referral History" },
-  ];
+  { to: "/doctor", label: "Dashboard" },
+  { to: "/doctor/patients", label: "My Patients" },
+  { to: "/doctor/referral", label: "New Referral" },
+  { to: "/doctor/referral-history", label: "Referral History" },
+  { to: "/doctor/profile", label: "Profile" },
+];
 
   // ================= MEDICAL DIRECTOR =================
   const medicalDirectorLinks = [

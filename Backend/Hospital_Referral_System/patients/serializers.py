@@ -1,4 +1,4 @@
-# serializers.py (complete, safe version)
+# serializers.py (patients app) – complete corrected version
 from rest_framework import serializers
 from .models import PatientProfile, Consultation
 from django.contrib.auth import get_user_model
@@ -7,18 +7,38 @@ import time
 User = get_user_model()
 
 
+# ==================== Consultation Serializer (NEW) ====================
+class ConsultationSerializer(serializers.ModelSerializer):
+    patient_name = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()
+    patient_mrn = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Consultation
+        fields = ['id', 'patient', 'doctor', 'patient_name', 'patient_mrn', 'doctor_name',
+                  'status', 'assigned_at', 'chief_complaint', 'notes']
+
+    def get_patient_name(self, obj):
+        return f"{obj.patient.first_name} {obj.patient.last_name}".strip() or obj.patient.username
+
+    def get_doctor_name(self, obj):
+        return f"Dr. {obj.doctor.first_name} {obj.doctor.last_name}".strip() or obj.doctor.username
+
+    def get_patient_mrn(self, obj):
+        try:
+            return obj.patient.patient_profile.medical_record_number
+        except:
+            return None
+
+
+# ==================== PatientProfile Serializer ====================
 class PatientProfileSerializer(serializers.ModelSerializer):
-    """
-    SAFE SERIALIZER – uses SerializerMethodField for all user fields.
-    Will never crash even if user relation is missing.
-    """
     username = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     first_name = serializers.SerializerMethodField()
     last_name = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
 
-    # These fields come directly from PatientProfile model
     national_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     date_of_birth = serializers.DateField(required=False, allow_null=True)
     gender = serializers.ChoiceField(choices=['Male', 'Female', 'Other'], required=False, allow_blank=True, allow_null=True)
@@ -59,6 +79,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
+# ==================== PatientRegistration Serializer ====================
 class PatientRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=8)
@@ -113,6 +134,7 @@ class PatientRegistrationSerializer(serializers.Serializer):
         return profile
 
 
+# ==================== Receptionist serializers ====================
 class UnassignedPatientSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     medical_record_number = serializers.SerializerMethodField()
@@ -143,7 +165,6 @@ class ActiveDoctorSerializer(serializers.ModelSerializer):
         return f"Dr. {obj.first_name} {obj.last_name}".strip()
 
     def get_specialty(self, obj):
-        # You can later replace with DoctorProfile.specialty if that model exists
         return "General"
 
 
