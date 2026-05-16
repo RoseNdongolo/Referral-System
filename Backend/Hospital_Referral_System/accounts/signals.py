@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from receptionists.models import ReceptionistProfile
 from patients.models import PatientProfile
 from doctors.models import DoctorProfile
-from .models import MedicalDirectorProfile   # or wherever MedicalDirectorProfile lives
+from medical_directors.models import MedicalDirectorProfile
 
 User = get_user_model()
 
@@ -27,14 +27,7 @@ def create_related_profile(sender, instance, created, **kwargs):
                 user=instance,
                 defaults={"medical_record_number": f"MRN-{instance.id}"}
             )
-        elif instance.role == "doctor":
-            DoctorProfile.objects.get_or_create(
-                user=instance,
-                defaults={
-                    "specialization": "General",
-                    "license_number": f"LIC-{instance.id}",
-                    "years_of_experience": 0,
-                    "is_available": True
-                }
-            )
-        # Add other roles (admin, etc.) if needed
+        # For doctors, do NOT create a profile automatically
+        # The API (DoctorRegistrationSerializer) will create both user and profile
+        # elif instance.role == "doctor":
+        #     pass   # removed to avoid duplicate

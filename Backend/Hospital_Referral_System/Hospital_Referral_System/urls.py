@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/patients/", include("patients.urls")),
     path("api/referrals/", include("referrals.urls")),
     path("api/hospitals/", include("hospitals.urls")),
+    path("api/medical-directors/", include("medical_directors.urls")),
     path("api/specialists/", include("specialists.urls")),
     path("api/doctors/", include("doctors.urls")),
     path("api/receptionists/", include("receptionists.urls")),   # <-- ADD THIS LINE

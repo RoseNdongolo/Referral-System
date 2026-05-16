@@ -1,17 +1,23 @@
+// src/pages/doctor/DoctorProfile.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import doctorService from '../../services/doctorService';
+import api from '../../services/api'; // to fetch specialties and departments
 import './DoctorProfile.css';
 
 export default function DoctorProfile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [specialties, setSpecialties] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     first_name: '',
     last_name: '',
     email: '',
     phone_number: '',
+    specialization: '',
+    department: '',
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState(false);
@@ -31,6 +37,12 @@ export default function DoctorProfile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
+    loadProfile();
+    loadSpecialties();
+    loadDepartments();
+  }, []);
+
+  const loadProfile = () => {
     doctorService.getMyProfile()
       .then(res => {
         const data = res.data;
@@ -41,10 +53,30 @@ export default function DoctorProfile() {
           last_name: data.last_name || '',
           email: data.email || '',
           phone_number: data.phone_number || '',
+          specialization: data.specialization || '',
+          department: data.department || '',
         });
       })
       .catch(err => console.error(err));
-  }, []);
+  };
+
+  const loadSpecialties = async () => {
+    try {
+      const res = await api.get('/hospitals/specialties/');
+      setSpecialties(res.data);
+    } catch (err) {
+      console.error('Failed to load specialties');
+    }
+  };
+
+  const loadDepartments = async () => {
+    try {
+      const res = await api.get('/hospitals/departments/');
+      setDepartments(res.data);
+    } catch (err) {
+      console.error('Failed to load departments');
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -152,6 +184,27 @@ export default function DoctorProfile() {
           <div className="form-group">
             <label>Phone Number</label>
             <input type="text" name="phone_number" value={formData.phone_number} onChange={handleChange} autoComplete="off" />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group half">
+              <label>Specialty</label>
+              <select name="specialization" value={formData.specialization} onChange={handleChange}>
+                <option value="">Select specialty</option>
+                {specialties.map(s => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group half">
+              <label>Department</label>
+              <select name="department" value={formData.department} onChange={handleChange}>
+                <option value="">Select department</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.name}>{d.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button type="submit" className="submit-btn">Save Changes</button>

@@ -22,7 +22,6 @@ class ReferralViewSet(ModelViewSet):
             return [IsAuthenticated()]
         elif self.action == 'retrieve':
             return [IsAuthenticated(), IsPatientOwner()]
-        # Create, update, partial_update, destroy: only doctors
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsDoctor()]
         return [IsAuthenticated()]
@@ -34,7 +33,6 @@ class ReferralViewSet(ModelViewSet):
         return self.queryset
 
     def get_object(self):
-        """Ensure a doctor can only access (and modify) their own referrals."""
         obj = super().get_object()
         user = self.request.user
         if self.action in ['update', 'partial_update', 'destroy'] and obj.doctor != user:
@@ -43,12 +41,15 @@ class ReferralViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         required_specialty = self.request.data.get('required_specialty')
-        patient_lat = self.request.data.get('patient_lat')
-        patient_lng = self.request.data.get('patient_lng')
+        patient = serializer.validated_data.get('patient')
+        patient_profile = patient.patient_profile
+
+        lat = patient_profile.latitude
+        lng = patient_profile.longitude
 
         hospital = None
-        if patient_lat and patient_lng and required_specialty:
-            patient_point = Point(float(patient_lng), float(patient_lat), srid=4326)
+        if lat and lng and required_specialty:
+            patient_point = Point(float(lng), float(lat), srid=4326)
             hospital = get_nearest_matching_hospital(required_specialty, patient_point)
 
         if hospital is None:
@@ -60,9 +61,9 @@ class ReferralViewSet(ModelViewSet):
             required_specialty=required_specialty
         )
 
-        if patient_lat and patient_lng and hospital and hospital.location:
+        if lat and lng and hospital and hospital.location:
             distance_km, travel_min, _, _ = fetch_google_maps_data(
-                patient_lat, patient_lng,
+                lat, lng,
                 hospital.location.y, hospital.location.x
             )
             if distance_km is not None:

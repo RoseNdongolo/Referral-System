@@ -32,12 +32,16 @@ const receptionistLinks = [
 
   // ================= MEDICAL DIRECTOR =================
   const medicalDirectorLinks = [
-    { to: "/medical-director", label: "Dashboard" },          // fixed path
-    { to: "/medical-director/doctors", label: "Manage Doctors" },
-    { to: "/medical-director/departments", label: "Departments" },
-    { to: "/medical-director/referrals", label: "Oversee Referrals" },
-    { to: "/medical-director/assignments", label: "Staff Assignments" },
-  ];
+  { to: "/medical-director", label: "Dashboard" },
+  { to: "/medical-director/doctors", label: "Manage Doctors" },
+  { to: "/medical-director/hospitals", label: "Manage Hospitals" },
+  { to: "/medical-director/specialties", label: "Manage Specialties" },
+  { to: "/medical-director/specialists", label: "Manage Specialists" },
+  { to: "/medical-director/departments", label: "Departments" },
+  { to: "/medical-director/patients", label: "Manage Patients" },
+  { to: "/medical-director/referrals", label: "Oversee Referrals" },
+  { to: "/medical-director/profile", label: "Profile" },
+];
 
   // ================= PATIENT =================
   const patientLinks = [

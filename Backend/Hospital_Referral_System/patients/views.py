@@ -1,4 +1,3 @@
-# views.py (patients app) – final corrected version
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 import logging
 
-from accounts.permissions import IsReceptionist, IsPatientOwner, IsDoctor
+from accounts.permissions import IsReceptionist, IsPatientOwner, IsDoctor, IsAdminOrMedicalDirector, IsReceptionistOrMedicalDirector
 from .models import PatientProfile, Consultation
 from .serializers import (
     PatientProfileSerializer,
@@ -33,8 +32,9 @@ class PatientProfileViewSet(ModelViewSet):
         return PatientProfileSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [IsAuthenticated, IsReceptionist]
+        # Allow receptionists AND medical directors (and admins) to manage patients
+        if self.action in ['list', 'create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAuthenticated, IsReceptionistOrMedicalDirector]
         elif self.action in ['me', 'change_password']:
             permission_classes = [IsAuthenticated, IsPatientOwner]
         elif self.action in ['unassigned_patients', 'active_doctors', 'assign_patient', 'assigned_patients', 'unassign']:
@@ -57,11 +57,13 @@ class PatientProfileViewSet(ModelViewSet):
             logger.exception("Patient registration failed")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # UPDATED update method with password handling
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         profile = self.get_object()
         user = profile.user
 
+        # Update user fields (excluding password)
         user_fields = ['first_name', 'last_name', 'email', 'username']
         for field in user_fields:
             if field in request.data:
@@ -70,12 +72,28 @@ class PatientProfileViewSet(ModelViewSet):
                     if User.objects.filter(username=val).exists():
                         return Response({'error': 'Username already taken'}, status=400)
                 setattr(user, field, val)
-        user.save()
 
-        serializer = self.get_serializer(profile, data=request.data, partial=partial)
+        # Handle password change if provided
+        if 'password' in request.data and request.data['password']:
+            user.set_password(request.data['password'])
+            user.save()
+        else:
+            user.save()
+
+        # Update profile fields
+        profile_fields = ['address', 'national_id', 'gender', 'date_of_birth', 'phone_number']
+        profile_data = {}
+        for field in profile_fields:
+            if field in request.data:
+                val = request.data[field]
+                if val == '':
+                    val = None
+                profile_data[field] = val
+
+        serializer = self.get_serializer(profile, data=profile_data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(serializer.data)
+        return Response(self.get_serializer(profile).data)
 
     # ==================== Patient self‑service ====================
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated])

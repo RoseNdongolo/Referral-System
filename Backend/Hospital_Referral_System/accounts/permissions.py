@@ -5,7 +5,6 @@ class IsSuperUser(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
 
-
 class IsReceptionist(BasePermission):
     """Receptionists (active profile) or superusers."""
     def has_permission(self, request, view):
@@ -18,7 +17,6 @@ class IsReceptionist(BasePermission):
             ))
         )
 
-
 class IsDoctor(BasePermission):
     """Doctors (profile exists) or superusers."""
     def has_permission(self, request, view):
@@ -26,10 +24,9 @@ class IsDoctor(BasePermission):
             request.user and request.user.is_authenticated and
             (request.user.is_superuser or (
                 request.user.role == "doctor" and
-                hasattr(request.user, 'doctor_profile')   # Create DoctorProfile model + signal later
+                hasattr(request.user, 'doctor_profile')
             ))
         )
-
 
 class IsMedicalDirector(BasePermission):
     """Medical Directors (active profile) or superusers."""
@@ -43,7 +40,6 @@ class IsMedicalDirector(BasePermission):
             ))
         )
 
-
 class IsAdmin(BasePermission):
     """Admin role or superuser."""
     def has_permission(self, request, view):
@@ -52,24 +48,31 @@ class IsAdmin(BasePermission):
             (request.user.is_superuser or request.user.role == "admin")
         )
 
-
 class IsPatientOwner(BasePermission):
-    """
-    - Staff (superuser, admin, receptionist, doctor, medical director) have full access.
-    - Patients can only access their own profile or their own referrals.
-    """
+    """Patients can only access their own profile or referrals."""
     def has_object_permission(self, request, view, obj):
-        # Staff bypass
         if request.user.is_staff or request.user.is_superuser or request.user.role == 'admin':
             return True
-
-        # Must be authenticated and a patient
         if not request.user.is_authenticated or request.user.role != 'patient':
             return False
-
-        # Object can be a Referral (has patient) or PatientProfile (has user)
-        if hasattr(obj, 'patient'):          # Referral object
+        if hasattr(obj, 'patient'):
             return obj.patient == request.user
-        elif hasattr(obj, 'user'):           # PatientProfile object
+        elif hasattr(obj, 'user'):
             return obj.user == request.user
         return False
+
+class IsAdminOrMedicalDirector(BasePermission):
+    """Allow access to Admin or Medical Director."""
+    def has_permission(self, request, view):
+        return (IsAdmin().has_permission(request, view) or
+                IsMedicalDirector().has_permission(request, view))
+
+# NEW: Allow access to Receptionist or Medical Director (or Admin)
+class IsReceptionistOrMedicalDirector(BasePermission):
+    """Allow access to receptionists or medical directors (and admins/superusers)."""
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser or request.user.role == 'admin':
+            return True
+        return request.user.role in ['receptionist', 'medical_director']

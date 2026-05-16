@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'patients',
     'doctors',
     'hospitals',
+    'medical_directors',
     'referrals',
     'specialists',
     'receptionists',

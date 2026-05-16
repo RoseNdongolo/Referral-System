@@ -18,11 +18,11 @@ class PatientProfile(models.Model):
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
 
     def __str__(self):
         return f"Patient: {self.user.get_full_name() or self.user.username}"
-    
-
 
 class Consultation(models.Model):
     STATUS_CHOICES = (

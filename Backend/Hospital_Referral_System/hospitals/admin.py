@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Hospital, HospitalSpecialty, HospitalDepartment
+from .models import Hospital, Specialty, HospitalDepartment
 
 admin.site.register(Hospital)
-admin.site.register(HospitalSpecialty)
+admin.site.register(Specialty)
 admin.site.register(HospitalDepartment)

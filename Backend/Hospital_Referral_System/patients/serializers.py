@@ -1,13 +1,12 @@
-# serializers.py (patients app) – complete corrected version
 from rest_framework import serializers
 from .models import PatientProfile, Consultation
 from django.contrib.auth import get_user_model
 import time
+from .services import geocode_address   # create this file (see step 4)
 
 User = get_user_model()
 
-
-# ==================== Consultation Serializer (NEW) ====================
+# ==================== Consultation Serializer ====================
 class ConsultationSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
@@ -29,7 +28,6 @@ class ConsultationSerializer(serializers.ModelSerializer):
             return obj.patient.patient_profile.medical_record_number
         except:
             return None
-
 
 # ==================== PatientProfile Serializer ====================
 class PatientProfileSerializer(serializers.ModelSerializer):
@@ -78,8 +76,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
-# ==================== PatientRegistration Serializer ====================
+# ==================== PatientRegistration Serializer (with geocoding) ====================
 class PatientRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=8)
@@ -112,6 +109,9 @@ class PatientRegistrationSerializer(serializers.Serializer):
             role='patient'
         )
         mrn = f"MRN-{user.id}-{int(time.time() * 1000)}"
+        address = validated_data.get('address') or ''
+        lat, lng = geocode_address(address)   # geocoding
+
         profile, created = PatientProfile.objects.get_or_create(
             user=user,
             defaults={
@@ -120,7 +120,9 @@ class PatientRegistrationSerializer(serializers.Serializer):
                 'national_id': validated_data.get('national_id') or '',
                 'date_of_birth': validated_data.get('date_of_birth'),
                 'gender': validated_data.get('gender') or '',
-                'address': validated_data.get('address') or '',
+                'address': address,
+                'latitude': lat,
+                'longitude': lng,
             }
         )
         if not created:
@@ -129,10 +131,11 @@ class PatientRegistrationSerializer(serializers.Serializer):
             profile.national_id = validated_data.get('national_id') or profile.national_id
             profile.date_of_birth = validated_data.get('date_of_birth') or profile.date_of_birth
             profile.gender = validated_data.get('gender') or profile.gender
-            profile.address = validated_data.get('address') or profile.address
+            profile.address = address
+            profile.latitude = lat
+            profile.longitude = lng
             profile.save()
         return profile
-
 
 # ==================== Receptionist serializers ====================
 class UnassignedPatientSerializer(serializers.ModelSerializer):
@@ -152,7 +155,6 @@ class UnassignedPatientSerializer(serializers.ModelSerializer):
         except:
             return None
 
-
 class ActiveDoctorSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     specialty = serializers.SerializerMethodField()
@@ -166,7 +168,6 @@ class ActiveDoctorSerializer(serializers.ModelSerializer):
 
     def get_specialty(self, obj):
         return "General"
-
 
 class AssignPatientSerializer(serializers.Serializer):
     patient_id = serializers.IntegerField()
