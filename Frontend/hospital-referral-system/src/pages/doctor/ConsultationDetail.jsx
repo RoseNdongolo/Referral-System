@@ -1,3 +1,4 @@
+// src/pages/doctor/ConsultationDetail.jsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import doctorService from '../../services/doctorService';
@@ -8,29 +9,47 @@ export default function ConsultationDetail() {
   const navigate = useNavigate();
   const [consultation, setConsultation] = useState(null);
   const [status, setStatus] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+  const [testResults, setTestResults] = useState('');
+  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [showReferralForm, setShowReferralForm] = useState(false);
+  const [specialties, setSpecialties] = useState([]);
   const [referralData, setReferralData] = useState({
     required_specialty: '',
-    hospital_id: '',
     referral_reason: '',
     diagnosis: '',
     clinical_notes: '',
+    test_results: '',
   });
-  const [hospitals, setHospitals] = useState([]);
 
   useEffect(() => {
     fetchConsultation();
-    fetchHospitals();
+    fetchSpecialties();
   }, [id]);
+
+  // Pre‑fill referral form when consultation loads
+  useEffect(() => {
+    if (consultation) {
+      setReferralData(prev => ({
+        ...prev,
+        diagnosis: consultation.diagnosis || '',
+        clinical_notes: consultation.notes || '',
+        test_results: consultation.test_results || '',
+      }));
+    }
+  }, [consultation]);
 
   const fetchConsultation = async () => {
     try {
       const res = await doctorService.getConsultationDetail(id);
       setConsultation(res.data);
       setStatus(res.data.status);
+      setDiagnosis(res.data.diagnosis || '');
+      setTestResults(res.data.test_results || '');
+      setNotes(res.data.notes || '');
     } catch (err) {
       console.error(err);
       setError('Consultation not found or access denied');
@@ -39,9 +58,27 @@ export default function ConsultationDetail() {
     }
   };
 
-  const fetchHospitals = async () => {
-    // Fetch hospitals from your endpoint (e.g., '/hospitals/')
-    // For now, leave empty or implement later.
+  const fetchSpecialties = async () => {
+    try {
+      const res = await doctorService.getAllSpecialties();
+      setSpecialties(res.data);
+    } catch (err) {
+      console.error('Failed to load specialties');
+      setSpecialties([]);
+    }
+  };
+
+  const handleSaveClinical = async () => {
+    setUpdating(true);
+    try {
+      await doctorService.updateConsultationStatus(id, status, { diagnosis, test_results: testResults, notes });
+      setConsultation(prev => ({ ...prev, diagnosis, test_results: testResults, notes }));
+      alert('Clinical data saved');
+    } catch (err) {
+      setError('Failed to save clinical data');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleStatusUpdate = async () => {
@@ -70,9 +107,11 @@ export default function ConsultationDetail() {
     try {
       await doctorService.createReferral({
         consultation: consultation.id,
-        patient: consultation.patient,
-        doctor: consultation.doctor,
-        ...referralData,
+        required_specialty: referralData.required_specialty,
+        referral_reason: referralData.referral_reason,
+        diagnosis: referralData.diagnosis,
+        clinical_notes: referralData.clinical_notes,
+        test_results: referralData.test_results,
       });
       alert('Referral created successfully');
       setShowReferralForm(false);
@@ -91,7 +130,13 @@ export default function ConsultationDetail() {
       <div className="info-card">
         <p><strong>MRN:</strong> {consultation.patient_mrn}</p>
         <p><strong>Chief Complaint:</strong> {consultation.chief_complaint || 'N/A'}</p>
-        <p><strong>Notes:</strong> {consultation.notes || 'N/A'}</p>
+        <p><strong>Notes:</strong></p>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows="2" style={{width: '100%'}} />
+        <p><strong>Diagnosis:</strong></p>
+        <textarea value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} rows="2" style={{width: '100%'}} />
+        <p><strong>Test Results:</strong></p>
+        <textarea value={testResults} onChange={(e) => setTestResults(e.target.value)} rows="2" style={{width: '100%'}} />
+        <button onClick={handleSaveClinical} disabled={updating} className="save-clinical-btn">Save Clinical Data</button>
         <p><strong>Status:</strong> 
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="assigned">Assigned</option>
@@ -115,13 +160,9 @@ export default function ConsultationDetail() {
           <form onSubmit={handleCreateReferral}>
             <div className="form-group">
               <label>Required Specialty *</label>
-              <input type="text" name="required_specialty" value={referralData.required_specialty} onChange={handleReferralChange} required />
-            </div>
-            <div className="form-group">
-              <label>Target Hospital</label>
-              <select name="hospital_id" value={referralData.hospital_id} onChange={handleReferralChange}>
-                <option value="">Select hospital</option>
-                {/* Map hospitals from state */}
+              <select name="required_specialty" value={referralData.required_specialty} onChange={handleReferralChange} required>
+                <option value="">Select specialty</option>
+                {specialties.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -130,11 +171,15 @@ export default function ConsultationDetail() {
             </div>
             <div className="form-group">
               <label>Diagnosis</label>
-              <textarea name="diagnosis" value={referralData.diagnosis} onChange={handleReferralChange} />
+              <textarea name="diagnosis" value={referralData.diagnosis} onChange={handleReferralChange} placeholder="Leave empty to use consultation diagnosis" />
             </div>
             <div className="form-group">
               <label>Clinical Notes</label>
-              <textarea name="clinical_notes" value={referralData.clinical_notes} onChange={handleReferralChange} />
+              <textarea name="clinical_notes" value={referralData.clinical_notes} onChange={handleReferralChange} placeholder="Leave empty to use consultation notes" />
+            </div>
+            <div className="form-group">
+              <label>Test Results</label>
+              <textarea name="test_results" value={referralData.test_results} onChange={handleReferralChange} placeholder="Leave empty to use consultation test results" />
             </div>
             <button type="submit" className="submit-btn">Submit Referral</button>
           </form>

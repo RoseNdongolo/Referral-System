@@ -1,6 +1,8 @@
+// src/services/receptionistService.js
 import api from './api';
 
 const receptionistService = {
+  // Profile – correct endpoint
   getMyProfile: () => api.get('/receptionists/me/'),
   updateMyProfile: (data) => api.put('/receptionists/me/', data),
   deleteMyAccount: () => api.delete('/receptionists/me/'),
@@ -19,6 +21,7 @@ const receptionistService = {
 
   getAssignedPatients: () => api.get('/patients/patient-profiles/assigned_patients/'),
   unassignPatient: (consultationId) => api.delete(`/patients/patient-profiles/${consultationId}/unassign/`),
+
   // Referrals
   getAllReferrals: () => api.get('/referrals/referrals/'),
 };

@@ -8,17 +8,21 @@ const doctorService = {
   deleteMyAccount: () => api.delete('/doctors/me/'),
   changePassword: (data) => api.post('/doctors/change_password/', data),
 
-  // Consultations (assigned patients)
+  // Consultations
   getMyConsultations: () => api.get('/patients/patient-profiles/my_consultations/'),
-  updateConsultationStatus: (consultationId, status) => 
-    api.patch(`/patients/patient-profiles/${consultationId}/update_consultation_status/`, { status }),
   getConsultationDetail: (id) => api.get(`/patients/patient-profiles/${id}/consultation_detail/`),
-
+  updateConsultationStatus: (consultationId, status, extra = {}) => 
+    api.patch(`/patients/patient-profiles/${consultationId}/update_consultation_status/`, { status, ...extra }),
 
   // Referrals
-  getAllReferrals: () => api.get('/referrals/referrals/'),  // may filter by doctor later
+  getAllReferrals: () => api.get('/referrals/referrals/'),
   createReferral: (data) => api.post('/referrals/referrals/', data),
   getReferralById: (id) => api.get(`/referrals/referrals/${id}/`),
+  updateReferral: (id, data) => api.patch(`/referrals/referrals/${id}/`, data),   // PATCH, not PUT
+  deleteReferral: (id) => api.delete(`/referrals/referrals/${id}/`),
+
+  // Specialties
+  getAllSpecialties: () => api.get('/hospitals/specialties/'),
 };
 
 export default doctorService;

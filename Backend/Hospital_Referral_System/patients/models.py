@@ -24,6 +24,7 @@ class PatientProfile(models.Model):
     def __str__(self):
         return f"Patient: {self.user.get_full_name() or self.user.username}"
 
+
 class Consultation(models.Model):
     STATUS_CHOICES = (
         ('assigned', 'Assigned'),
@@ -38,6 +39,8 @@ class Consultation(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
     chief_complaint = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    diagnosis = models.TextField(blank=True, null=True)
+    test_results = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.patient.username} -> Dr. {self.doctor.username} ({self.status})"

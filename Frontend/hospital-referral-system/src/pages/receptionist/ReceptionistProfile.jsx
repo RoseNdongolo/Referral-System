@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import receptionistService from '../../services/receptionistService';
-import '../patient/Profile.css';  // reuse patient profile CSS (or create a separate one)
+import '../patient/Profile.css';  // reuse patient profile CSS
 
 export default function ReceptionistProfile() {
   const navigate = useNavigate();
@@ -156,6 +156,16 @@ export default function ReceptionistProfile() {
               <small>Cannot be changed</small>
             </div>
           )}
+          {/* Desk number - always show */}
+          <div className="form-group">
+            <label>Desk Number</label>
+            <input type="text" value={profile.desk_number || 'Not assigned'} disabled className="readonly-field" />
+          </div>
+          {/* Shift - always show */}
+          <div className="form-group">
+            <label>Shift</label>
+            <input type="text" value={profile.shift || 'Not assigned'} disabled className="readonly-field" />
+          </div>
           <button type="submit" className="submit-btn">Save Changes</button>
         </form>
 

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import PatientProfile, Consultation
 from django.contrib.auth import get_user_model
 import time
-from .services import geocode_address   # create this file (see step 4)
+from .services import geocode_address
 
 User = get_user_model()
 
@@ -14,8 +14,11 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Consultation
-        fields = ['id', 'patient', 'doctor', 'patient_name', 'patient_mrn', 'doctor_name',
-                  'status', 'assigned_at', 'chief_complaint', 'notes']
+        fields = [
+            'id', 'patient', 'doctor', 'patient_name', 'patient_mrn', 'doctor_name',
+            'status', 'assigned_at', 'chief_complaint', 'notes',
+            'diagnosis', 'test_results'
+        ]
 
     def get_patient_name(self, obj):
         return f"{obj.patient.first_name} {obj.patient.last_name}".strip() or obj.patient.username
@@ -76,7 +79,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-# ==================== PatientRegistration Serializer (with geocoding) ====================
+# ==================== PatientRegistration Serializer ====================
 class PatientRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=8)
@@ -110,7 +113,7 @@ class PatientRegistrationSerializer(serializers.Serializer):
         )
         mrn = f"MRN-{user.id}-{int(time.time() * 1000)}"
         address = validated_data.get('address') or ''
-        lat, lng = geocode_address(address)   # geocoding
+        lat, lng = geocode_address(address)
 
         profile, created = PatientProfile.objects.get_or_create(
             user=user,

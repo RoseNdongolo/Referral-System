@@ -1,7 +1,7 @@
-# referrals/serializers.py
 from rest_framework import serializers
 from .models import Referral, ReferralAttachment
 from hospitals.serializers import HospitalSerializer
+from patients.models import Consultation   # add import
 
 class ReferralAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,11 +15,19 @@ class ReferralSerializer(serializers.ModelSerializer):
     hospital_details = HospitalSerializer(source='hospital', read_only=True)
     patient_mrn = serializers.SerializerMethodField()
     additional_notes = serializers.CharField(source='clinical_notes', read_only=True)
+    consultation = serializers.PrimaryKeyRelatedField(
+        queryset=Consultation.objects.all(),
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Referral
         fields = '__all__'
-        read_only_fields = ['created_at', 'distance_km', 'estimated_travel_time_minutes', 'route_info', 'traffic_info']
+        read_only_fields = [
+            'patient', 'doctor', 'hospital', 'created_at',
+            'distance_km', 'estimated_travel_time_minutes', 'route_info', 'traffic_info'
+        ]
 
     def get_patient_mrn(self, obj):
         try:

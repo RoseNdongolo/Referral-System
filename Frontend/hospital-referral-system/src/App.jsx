@@ -37,6 +37,7 @@ import ManageDepartments from "./pages/medicalDirector/ManageDepartments.jsx";
 import MedicalDirectorProfile from "./pages/medicalDirector/MedicalDirectorProfile.jsx";
 import ManagePatients from "./pages/medicalDirector/ManagePatients.jsx";
 import ManageHospitals from "./pages/medicalDirector/ManageHospitals.jsx";
+import ManageReceptionists from "./pages/medicalDirector/ManageReceptionists.jsx";
 import ManageSpecialties from "./pages/medicalDirector/ManageSpecialties.jsx";
 import ManageSpecialists from "./pages/medicalDirector/ManageSpecialists.jsx";
 
@@ -101,6 +102,7 @@ function App() {
             <Route path="/medical-director/profile" element={<MedicalDirectorProfile />} />
             <Route path="/medical-director/patients" element={<ManagePatients />} />
             <Route path="/medical-director/hospitals" element={<ManageHospitals />} />
+            <Route path="/medical-director/receptionists" element={<ManageReceptionists />} />
             <Route path="/medical-director/specialties" element={<ManageSpecialties />} />
             <Route path="/medical-director/specialists" element={<ManageSpecialists />} />
           </Route>

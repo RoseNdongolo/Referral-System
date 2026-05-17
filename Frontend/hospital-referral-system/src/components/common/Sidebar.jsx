@@ -38,6 +38,7 @@ const receptionistLinks = [
   { to: "/medical-director/specialties", label: "Manage Specialties" },
   { to: "/medical-director/specialists", label: "Manage Specialists" },
   { to: "/medical-director/departments", label: "Departments" },
+  { to: "/medical-director/receptionists", label: "Manage Receptionists" },
   { to: "/medical-director/patients", label: "Manage Patients" },
   { to: "/medical-director/referrals", label: "Oversee Referrals" },
   { to: "/medical-director/profile", label: "Profile" },

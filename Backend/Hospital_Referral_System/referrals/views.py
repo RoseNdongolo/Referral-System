@@ -1,3 +1,4 @@
+# referrals/views.py
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -21,7 +22,8 @@ class ReferralViewSet(ModelViewSet):
         if self.action == 'list':
             return [IsAuthenticated()]
         elif self.action == 'retrieve':
-            return [IsAuthenticated(), IsPatientOwner()]
+            # Permission is handled in get_object (allow doctor, patient, staff)
+            return [IsAuthenticated()]
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), IsDoctor()]
         return [IsAuthenticated()]
@@ -30,20 +32,39 @@ class ReferralViewSet(ModelViewSet):
         user = self.request.user
         if user.role == 'patient':
             return self.queryset.filter(patient=user)
-        return self.queryset
+        elif user.role == 'doctor':
+            return self.queryset.filter(doctor=user)   # only referrals created by this doctor
+        return self.queryset   # for admin, medical director, etc.
 
     def get_object(self):
         obj = super().get_object()
         user = self.request.user
-        if self.action in ['update', 'partial_update', 'destroy'] and obj.doctor != user:
+        if self.action == 'retrieve':
+            # Allow doctor who created it, patient who owns it, or staff/admin/medical director
+            if obj.doctor == user or obj.patient == user or user.is_staff or user.role in ['admin', 'medical_director']:
+                return obj
+            raise PermissionDenied("You do not have permission to view this referral.")
+        elif self.action in ['update', 'partial_update', 'destroy'] and obj.doctor != user:
             raise PermissionDenied("You can only edit or delete your own referrals.")
         return obj
 
     def perform_create(self, serializer):
         required_specialty = self.request.data.get('required_specialty')
-        patient = serializer.validated_data.get('patient')
-        patient_profile = patient.patient_profile
+        consultation_id = self.request.data.get('consultation')
+        patient = None
 
+        if consultation_id:
+            # Import locally to avoid circular import
+            from patients.models import Consultation
+            consultation = get_object_or_404(Consultation, id=consultation_id, doctor=self.request.user)
+            patient = consultation.patient
+        else:
+            patient = serializer.validated_data.get('patient')
+
+        if not patient:
+            raise ValidationError("Patient information is required to create a referral.")
+
+        patient_profile = patient.patient_profile
         lat = patient_profile.latitude
         lng = patient_profile.longitude
 
@@ -55,12 +76,15 @@ class ReferralViewSet(ModelViewSet):
         if hospital is None:
             hospital = Hospital.objects.filter(is_active=True).first()
 
+        # Save the referral with the determined hospital and patient
         referral = serializer.save(
             doctor=self.request.user,
             hospital=hospital,
-            required_specialty=required_specialty
+            required_specialty=required_specialty,
+            patient=patient
         )
 
+        # Optionally fetch GIS data (distance, travel time) using the patient's location
         if lat and lng and hospital and hospital.location:
             distance_km, travel_min, _, _ = fetch_google_maps_data(
                 lat, lng,
