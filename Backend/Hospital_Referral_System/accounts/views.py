@@ -10,7 +10,7 @@ from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-
+from rest_framework.decorators import action   # <-- add this import
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import (
@@ -173,3 +173,41 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         if password:
             user.set_password(password)
             user.save()
+
+
+# ========== PROFILE MANAGEMENT FOR ANY AUTHENTICATED USER ==========
+
+class ProfileViewSet(viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(pk=self.request.user.pk)
+
+    @action(detail=False, methods=['get', 'put', 'delete'], url_path='me')
+    def me(self, request):
+        user = request.user
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        elif request.method == 'DELETE':
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['post'], url_path='change-password')
+    def change_password(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+        if not user.check_password(old_password):
+            return Response({'error': 'Old password is incorrect'}, status=400)
+        if len(new_password) < 8:
+            return Response({'error': 'Password must be at least 8 characters'}, status=400)
+        user.set_password(new_password)
+        user.save()
+        return Response({'message': 'Password changed successfully'})

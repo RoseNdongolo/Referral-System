@@ -14,7 +14,7 @@ export default function AdminSpecialists() {
     email: '',
     first_name: '',
     last_name: '',
-    specialization: '',
+    specialization_id: '',
     password: '',
     is_active: true,
   });
@@ -28,28 +28,23 @@ export default function AdminSpecialists() {
   const fetchSpecialists = async () => {
     try {
       const res = await adminService.getAllSpecialists();
-      console.log('Specialists API response:', res.data);
       let doctors = [];
       if (res.data && Array.isArray(res.data)) {
         doctors = res.data;
       } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
         doctors = res.data.results;
-      } else {
-        doctors = [];
       }
-      const normalized = doctors
-        .map(doc => ({
-          ...doc,
-          id: doc.id || doc.user_id || doc.pk,
-          specialization: doc.specialization || '',
-          first_name: doc.first_name || '',
-          last_name: doc.last_name || '',
-        }))
-        .filter(doc => doc.id != null);
+      const normalized = doctors.map(doc => ({
+        ...doc,
+        id: doc.id,
+        specialization_name: doc.specialization_name,
+        specialization_id: doc.specialization_id,
+        first_name: doc.first_name || '',
+        last_name: doc.last_name || '',
+      }));
       setSpecialists(normalized);
     } catch (err) {
-      console.error('Fetch specialists error:', err);
-      setError('Failed to load specialists. Check console for details.');
+      setError('Failed to load specialists');
     } finally {
       setLoading(false);
     }
@@ -72,7 +67,7 @@ export default function AdminSpecialists() {
         email: doc.email || '',
         first_name: doc.first_name || '',
         last_name: doc.last_name || '',
-        specialization: doc.specialization || '',
+        specialization_id: doc.specialization_id || '',
         password: '',
         is_active: doc.is_active === undefined ? true : doc.is_active,
       });
@@ -83,7 +78,7 @@ export default function AdminSpecialists() {
         email: '',
         first_name: '',
         last_name: '',
-        specialization: '',
+        specialization_id: '',
         password: '',
         is_active: true,
       });
@@ -101,9 +96,19 @@ export default function AdminSpecialists() {
       if (editing) {
         const updateData = { ...formData };
         if (!updateData.password) delete updateData.password;
+        if (updateData.specialization_id) updateData.specialization_id = parseInt(updateData.specialization_id);
+        else updateData.specialization_id = null;
         await adminService.updateSpecialist(editing.id, updateData);
       } else {
-        await adminService.createSpecialist(formData);
+        if (!formData.password) {
+          setError('Password is required');
+          return;
+        }
+        const payload = {
+          ...formData,
+          specialization_id: formData.specialization_id ? parseInt(formData.specialization_id) : null,
+        };
+        await adminService.createSpecialist(payload);
       }
       setShowModal(false);
       fetchSpecialists();
@@ -156,7 +161,7 @@ export default function AdminSpecialists() {
               <tr key={doc.id}>
                 <td>{doc.first_name} {doc.last_name} ({doc.username})</td>
                 <td>{doc.email}</td>
-                <td>{doc.specialization || 'Not set'}</td>
+                <td>{doc.specialization_name || 'Not set'}</td>
                 <td>
                   <button
                     className={`status-toggle ${doc.is_active ? 'active' : 'inactive'}`}
@@ -200,10 +205,10 @@ export default function AdminSpecialists() {
               </div>
               <div className="form-group">
                 <label>Specialization</label>
-                <select name="specialization" value={formData.specialization} onChange={handleChange}>
+                <select name="specialization_id" value={formData.specialization_id} onChange={handleChange}>
                   <option value="">Select specialty</option>
                   {specialties.map(spec => (
-                    <option key={spec.id} value={spec.name}>{spec.name}</option>
+                    <option key={spec.id} value={spec.id}>{spec.name}</option>
                   ))}
                 </select>
               </div>

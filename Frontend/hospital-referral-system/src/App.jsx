@@ -56,6 +56,7 @@ import AdminSpecialties from "./pages/admin/AdminSpecialties.jsx";
 import AdminSpecialists from "./pages/admin/AdminSpecialists.jsx";
 import AdminReferralsList from "./pages/admin/AdminReferralsList.jsx";
 import AdminReferralDetail from "./pages/admin/AdminReferralDetail.jsx";
+import AdminProfile from "./pages/admin/AdminProfile.jsx";
 
 function App() {
   return (
@@ -129,6 +130,7 @@ function App() {
             <Route path="/admin/specialists" element={<AdminSpecialists />} />
             <Route path="/admin/referrals" element={<AdminReferralsList />} />
             <Route path="/admin/referrals/:id" element={<AdminReferralDetail />} />
+            <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
         </Route>
       </Route>

@@ -8,9 +8,9 @@ const doctorService = {
   deleteMyAccount: () => api.delete('/doctors/me/'),
   changePassword: (data) => api.post('/doctors/change_password/', data),
 
-  // Consultations
-  getMyConsultations: () => api.get('/patients/patient-profiles/my_consultations/'),
-  getConsultationDetail: (id) => api.get(`/patients/patient-profiles/${id}/consultation_detail/`),
+  // Consultations (fixed – use doctor's own endpoint)
+  getMyConsultations: () => api.get('/doctors/my_consultations/'),     // ✅ corrected
+  getConsultationDetail: (id) => api.get(`/patients/patient-profiles/${id}/consultation_detail/`), // may need a doctor version
   updateConsultationStatus: (consultationId, status, extra = {}) => 
     api.patch(`/patients/patient-profiles/${consultationId}/update_consultation_status/`, { status, ...extra }),
 
@@ -18,7 +18,7 @@ const doctorService = {
   getAllReferrals: () => api.get('/referrals/referrals/'),
   createReferral: (data) => api.post('/referrals/referrals/', data),
   getReferralById: (id) => api.get(`/referrals/referrals/${id}/`),
-  updateReferral: (id, data) => api.patch(`/referrals/referrals/${id}/`, data),   // PATCH, not PUT
+  updateReferral: (id, data) => api.patch(`/referrals/referrals/${id}/`, data),
   deleteReferral: (id) => api.delete(`/referrals/referrals/${id}/`),
 
   // Specialties

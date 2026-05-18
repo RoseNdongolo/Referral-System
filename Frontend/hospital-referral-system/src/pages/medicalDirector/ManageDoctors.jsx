@@ -18,8 +18,8 @@ export default function ManageDoctors() {
     last_name: '',
     email: '',
     phone_number: '',
-    specialization: '',
-    department: '',
+    specialization_id: '',
+    department_id: '',
     is_available: true
   });
   const [modalError, setModalError] = useState('');
@@ -33,7 +33,17 @@ export default function ManageDoctors() {
 
   const loadDoctors = () => {
     medicalDirectorService.getAllDoctors()
-      .then(res => setDoctors(res.data))
+      .then(res => {
+        const doctorsList = (res.data || []).map(doc => ({
+          ...doc,
+          id: doc.id,
+          specialization_name: doc.specialization_name || '',
+          specialization_id: doc.specialization_id || null,
+          department_name: doc.department_name || '',
+          department_id: doc.department_id || null,
+        }));
+        setDoctors(doctorsList);
+      })
       .catch(err => setError('Failed to load doctors'))
       .finally(() => setLoading(false));
   };
@@ -60,7 +70,7 @@ export default function ManageDoctors() {
     try {
       await medicalDirectorService.toggleDoctorActive(doctorId);
       setDoctors(doctors.map(doc =>
-        doc.doctor_id === doctorId
+        doc.id === doctorId
           ? { ...doc, is_available: !doc.is_available }
           : doc
       ));
@@ -81,8 +91,8 @@ export default function ManageDoctors() {
         last_name: doctor.last_name || '',
         email: doctor.email || '',
         phone_number: doctor.phone_number || '',
-        specialization: doctor.specialization || '',
-        department: doctor.department || '',
+        specialization_id: doctor.specialization_id || '',
+        department_id: doctor.department_id || '',
         is_available: doctor.is_available !== undefined ? doctor.is_available : true
       });
     } else {
@@ -93,8 +103,8 @@ export default function ManageDoctors() {
         last_name: '',
         email: '',
         phone_number: '',
-        specialization: '',
-        department: '',
+        specialization_id: '',
+        department_id: '',
         is_available: true
       });
     }
@@ -106,7 +116,7 @@ export default function ManageDoctors() {
     setEditingDoctor(null);
     setFormData({
       username: '', password: '', first_name: '', last_name: '', email: '',
-      phone_number: '', specialization: '', department: '', is_available: true
+      phone_number: '', specialization_id: '', department_id: '', is_available: true
     });
     setModalError('');
     setModalSuccess('');
@@ -125,15 +135,20 @@ export default function ManageDoctors() {
     setModalError('');
     setModalSuccess('');
     try {
+      const payload = {
+        ...formData,
+        specialization_id: formData.specialization_id || null,
+        department_id: formData.department_id || null,
+      };
       if (editingDoctor) {
-        await medicalDirectorService.updateDoctor(editingDoctor.doctor_id, formData);
+        await medicalDirectorService.updateDoctor(editingDoctor.id, payload);
         setModalSuccess('Doctor updated successfully');
       } else {
-        if (!formData.password) {
+        if (!payload.password) {
           setModalError('Password is required for new doctor');
           return;
         }
-        await medicalDirectorService.createDoctor(formData);
+        await medicalDirectorService.createDoctor(payload);
         setModalSuccess('Doctor created successfully');
       }
       setTimeout(() => {
@@ -184,11 +199,11 @@ export default function ManageDoctors() {
               </tr>
             ) : (
               doctors.map(doc => (
-                <tr key={doc.doctor_id}>
-                  <td>{doc.full_name}</td>
+                <tr key={doc.id}>
+                  <td>{doc.full_name || `${doc.first_name} ${doc.last_name}`}</td>
                   <td>{doc.email}</td>
-                  <td>{doc.specialization}</td>
-                  <td>{doc.department || '-'}</td>
+                  <td>{doc.specialization_name || '-'}</td>
+                  <td>{doc.department_name || '-'}</td>
                   <td>
                     <span className={`status-badge ${doc.is_available ? 'status-active' : 'status-inactive'}`}>
                       {doc.is_available ? 'Active' : 'Inactive'}
@@ -196,8 +211,8 @@ export default function ManageDoctors() {
                   </td>
                   <td>
                     <button onClick={() => openModal(doc)} className="edit-btn">Edit</button>
-                    <button onClick={() => handleDelete(doc.doctor_id)} className="delete-btn">Delete</button>
-                    <button onClick={() => toggleActive(doc.doctor_id)} className="toggle-btn">
+                    <button onClick={() => handleDelete(doc.id)} className="delete-btn">Delete</button>
+                    <button onClick={() => toggleActive(doc.id)} className="toggle-btn">
                       {doc.is_available ? 'Deactivate' : 'Activate'}
                     </button>
                   </td>
@@ -231,15 +246,15 @@ export default function ManageDoctors() {
                 </div>
                 <div className="form-row">
                   <div className="form-group"><label>Specialty</label>
-                    <select name="specialization" value={formData.specialization} onChange={handleChange}>
+                    <select name="specialization_id" value={formData.specialization_id} onChange={handleChange}>
                       <option value="">Select specialty</option>
-                      {specialties.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      {specialties.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
                   <div className="form-group"><label>Department</label>
-                    <select name="department" value={formData.department} onChange={handleChange}>
+                    <select name="department_id" value={formData.department_id} onChange={handleChange}>
                       <option value="">Select department</option>
-                      {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                      {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                 </div>

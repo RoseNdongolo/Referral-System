@@ -15,12 +15,14 @@ from .serializers import (
     DoctorListSerializer,
     DoctorRegistrationSerializer
 )
+from hospitals.models import Specialty, HospitalDepartment
+from patients.models import Consultation   # <-- needed for my_consultations
 
 User = get_user_model()
 
 
 class DoctorProfileViewSet(ModelViewSet):
-    queryset = DoctorProfile.objects.select_related('user').all()
+    queryset = DoctorProfile.objects.select_related('user', 'specialization', 'department').all()
     serializer_class = DoctorProfileSerializer
     lookup_field = 'user_id'
 
@@ -36,11 +38,12 @@ class DoctorProfileViewSet(ModelViewSet):
             permission_classes = [IsAuthenticated, IsDoctor]
         elif self.action in ['all_doctors', 'toggle_active', 'update_specialty']:
             permission_classes = [IsAuthenticated, IsAdminOrMedicalDirector]
+        elif self.action == 'my_consultations':
+            permission_classes = [IsAuthenticated, IsDoctor]   # <-- important
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
-    # ==================== CREATE with error handling ====================
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -51,14 +54,12 @@ class DoctorProfileViewSet(ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    # ==================== Custom update (includes is_active) ====================
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         user_id = self.kwargs.get(self.lookup_field)
         doctor_user = get_object_or_404(User, pk=user_id, role='doctor')
         profile = doctor_user.doctor_profile
 
-        # Update user fields (add 'is_active')
         user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'is_active']
         for field in user_fields:
             if field in request.data:
@@ -69,17 +70,19 @@ class DoctorProfileViewSet(ModelViewSet):
                 setattr(doctor_user, field, val)
         doctor_user.save()
 
-        # Update profile fields
-        profile_fields = ['specialization', 'department', 'is_available']
-        for field in profile_fields:
-            if field in request.data:
-                setattr(profile, field, request.data[field])
+        if 'specialization_id' in request.data:
+            spec_id = request.data['specialization_id']
+            profile.specialization = Specialty.objects.filter(id=spec_id).first() if spec_id else None
+        if 'department_id' in request.data:
+            dept_id = request.data['department_id']
+            profile.department = HospitalDepartment.objects.filter(id=dept_id).first() if dept_id else None
+        if 'is_available' in request.data:
+            profile.is_available = request.data['is_available']
         profile.save()
 
         serializer = DoctorListSerializer(doctor_user)
         return Response(serializer.data)
 
-    # ==================== Custom destroy ====================
     def destroy(self, request, *args, **kwargs):
         user_id = self.kwargs.get(self.lookup_field)
         try:
@@ -89,23 +92,22 @@ class DoctorProfileViewSet(ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # ==================== Doctor self actions ====================
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated, IsDoctor])
     def me(self, request):
         user = request.user
         try:
             profile = user.doctor_profile
         except DoctorProfile.DoesNotExist:
-            return Response({'error': 'Doctor profile not found'}, status=404)
+            return Response({'error': 'Doctor profile not found. Please contact admin.'}, status=404)
 
         if request.method == 'GET':
             serializer = DoctorSelfSerializer({'user': user, 'doctor_profile': profile})
             return Response(serializer.data)
-
         if request.method == 'DELETE':
             user.delete()
             return Response(status=204)
 
+        # PUT / PATCH
         user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username']
         for field in user_fields:
             if field in request.data:
@@ -116,10 +118,14 @@ class DoctorProfileViewSet(ModelViewSet):
                 setattr(user, field, val)
         user.save()
 
-        profile_fields = ['specialization', 'department', 'is_available']
-        for field in profile_fields:
-            if field in request.data:
-                setattr(profile, field, request.data[field])
+        if 'specialization_id' in request.data:
+            spec_id = request.data['specialization_id']
+            profile.specialization = Specialty.objects.filter(id=spec_id).first() if spec_id else None
+        if 'department_id' in request.data:
+            dept_id = request.data['department_id']
+            profile.department = HospitalDepartment.objects.filter(id=dept_id).first() if dept_id else None
+        if 'is_available' in request.data:
+            profile.is_available = request.data['is_available']
         profile.save()
 
         serializer = DoctorSelfSerializer({'user': user, 'doctor_profile': profile})
@@ -140,10 +146,9 @@ class DoctorProfileViewSet(ModelViewSet):
         user.save()
         return Response({'message': 'Password changed successfully'})
 
-    # ==================== Medical Director management actions ====================
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsAdminOrMedicalDirector])
     def all_doctors(self, request):
-        doctors = User.objects.filter(role='doctor', is_active=True).select_related('doctor_profile')
+        doctors = User.objects.filter(role='doctor', is_active=True).select_related('doctor_profile__specialization', 'doctor_profile__department')
         serializer = DoctorListSerializer(doctors, many=True)
         return Response(serializer.data)
 
@@ -158,9 +163,25 @@ class DoctorProfileViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsAdminOrMedicalDirector])
     def update_specialty(self, request, user_id=None):
         doctor = get_object_or_404(User, pk=user_id, role='doctor')
-        new_specialty = request.data.get('specialization')
-        if new_specialty:
-            doctor.doctor_profile.specialization = new_specialty
+        new_specialty_id = request.data.get('specialization_id')
+        if new_specialty_id:
+            specialty = Specialty.objects.filter(id=new_specialty_id).first()
+            doctor.doctor_profile.specialization = specialty
             doctor.doctor_profile.save()
-            return Response({'specialization': new_specialty})
-        return Response({'error': 'specialization required'}, status=400)
+            return Response({'specialization_id': specialty.id if specialty else None})
+        return Response({'error': 'specialization_id required'}, status=400)
+
+    # ========== Doctor's own consultations ==========
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
+    def my_consultations(self, request):
+        consultations = Consultation.objects.filter(doctor=request.user).select_related('patient')
+        data = []
+        for c in consultations:
+            data.append({
+                'id': c.id,
+                'patient_name': c.patient.get_full_name() or c.patient.username,
+                'patient_mrn': getattr(c.patient.patient_profile, 'medical_record_number', 'N/A'),
+                'status': c.status,
+                'assigned_at': c.assigned_at,
+            })
+        return Response(data)

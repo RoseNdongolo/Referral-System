@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -27,6 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -45,17 +47,23 @@ class LoginSerializer(serializers.Serializer):
         attrs["user"] = user
         return attrs
 
+
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
 
 class ResetPasswordSerializer(serializers.Serializer):
     uidb64 = serializers.CharField()
     token = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=8)
 
-# ========== Admin User Serializer ==========
+
+# ========== Admin / Profile Serializer ==========
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_active', 'is_staff', 'is_superuser']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 
+            'phone_number', 'role', 'is_active', 'is_staff', 'is_superuser'
+        ]
         read_only_fields = ['id']

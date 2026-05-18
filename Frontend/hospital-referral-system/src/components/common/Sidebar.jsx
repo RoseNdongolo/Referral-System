@@ -62,6 +62,8 @@ const receptionistLinks = [
     { to: "/admin/hospitals", label: "Hospitals" },
     { to: "/admin/specialists", label: "Specialists" },
     { to: "/admin/referrals", label: "All Referrals" },
+    { to: "/admin/specialties", label: "Specialties" },
+    { to: "/admin/profile", label: "Profile" },
   ];
 
   let links = [];
