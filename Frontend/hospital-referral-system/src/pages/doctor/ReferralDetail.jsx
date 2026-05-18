@@ -42,10 +42,11 @@ export default function ReferralDetail() {
 
   const handleSaveEdit = async () => {
     try {
-      await doctorService.updateReferral(id, editData);
+      await doctorService.updateReferral(id, editData); // PATCH
       setReferral({ ...referral, ...editData });
       setIsEditing(false);
-      alert('Referral updated successfully');
+      setStatusMessage('Referral updated successfully');
+      setTimeout(() => setStatusMessage(''), 3000);
     } catch (err) {
       setError('Failed to update referral');
     }
@@ -66,12 +67,22 @@ export default function ReferralDetail() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this referral? This action cannot be undone.')) return;
+    try {
+      await doctorService.deleteReferral(id);
+      alert('Referral deleted successfully');
+      navigate('/doctor/referral-history');
+    } catch (err) {
+      setError('Failed to delete referral');
+    }
+  };
+
   if (loading) return <div className="loading-state">Loading referral details...</div>;
   if (error) return <div className="error-message">{error}</div>;
   if (!referral) return <div className="error-message">Referral not found</div>;
 
-  // ✅ Allow editing for ALL referrals (backend already enforces ownership)
-  const canEdit = true;   // was: const canEdit = referral.status === 'pending';
+  const canEdit = true; // backend enforces ownership
 
   return (
     <div className="referral-detail-container">
@@ -93,15 +104,16 @@ export default function ReferralDetail() {
             <div className="detail-row"><strong>Diagnosis:</strong> {referral.diagnosis || 'N/A'}</div>
             <div className="detail-row"><strong>Clinical Notes:</strong> {referral.clinical_notes || 'N/A'}</div>
             <div className="detail-row"><strong>Test Results:</strong> {referral.test_results || 'N/A'}</div>
+            <div className="detail-row"><strong>Distance:</strong> {referral.distance_km ? `${referral.distance_km} km` : 'N/A'}</div>
+            <div className="detail-row"><strong>Travel Time:</strong> {referral.estimated_travel_time_minutes ? `${referral.estimated_travel_time_minutes} min` : 'N/A'}</div>
             <div className="detail-row"><strong>Created:</strong> {new Date(referral.created_at).toLocaleString()}</div>
-            {canEdit && (
-              <div className="detail-actions">
-                <button onClick={() => setIsEditing(true)} className="edit-referral-btn">Edit Referral</button>
-              </div>
-            )}
+            <div className="detail-actions">
+              <button onClick={() => setIsEditing(true)} className="edit-referral-btn">Edit Referral</button>
+              <button onClick={handleDelete} className="delete-referral-btn">Delete Referral</button>
+            </div>
           </>
         ) : (
-          // Edit mode – only editable fields
+          // Edit mode
           <div className="edit-form">
             <div className="form-group">
               <label>Referral Reason *</label>
@@ -127,7 +139,7 @@ export default function ReferralDetail() {
         )}
       </div>
 
-      {/* Status change dropdown – always visible (doctor can change status anytime) */}
+      {/* Status change dropdown */}
       <div className="status-change-section">
         <h3>Update Status</h3>
         <select onChange={(e) => handleStatusChange(e.target.value)} value={referral.status} disabled={updatingStatus}>
