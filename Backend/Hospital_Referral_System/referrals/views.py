@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.contrib.gis.geos import Point
 
-from accounts.permissions import IsDoctor, IsDoctorOwner
+from accounts.permissions import IsDoctor, IsMedicalDirectorOrAdminOrDoctorOwner
 from hospitals.models import Hospital
 from .models import Referral, ReferralAttachment
 from .serializers import ReferralSerializer, ReferralAttachmentSerializer
@@ -20,14 +20,13 @@ class ReferralViewSet(ModelViewSet):
         if self.action == 'list':
             return [IsAuthenticated()]
         elif self.action == 'retrieve':
-            # Permission is handled inside get_object
             return [IsAuthenticated()]
         elif self.action == 'create':
             # Only doctors (or superusers) can create referrals
             return [IsAuthenticated(), IsDoctor()]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            # Only the doctor who owns the referral can edit/delete (any status)
-            return [IsAuthenticated(), IsDoctorOwner()]
+            # Medical Directors/Admins OR the doctor who owns the referral
+            return [IsAuthenticated(), IsMedicalDirectorOrAdminOrDoctorOwner()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -49,7 +48,7 @@ class ReferralViewSet(ModelViewSet):
                 return obj
             raise PermissionDenied("You do not have permission to view this referral.")
 
-        # For update/delete, the permission class (IsDoctorOwner) already checks obj.doctor
+        # For update/delete, the permission class will handle object-level checks
         return obj
 
     def perform_create(self, serializer):
@@ -79,7 +78,6 @@ class ReferralViewSet(ModelViewSet):
         if hospital is None:
             hospital = Hospital.objects.filter(is_active=True).first()
 
-        # Save the referral with the determined hospital and patient
         referral = serializer.save(
             doctor=self.request.user,
             hospital=hospital,
@@ -87,7 +85,6 @@ class ReferralViewSet(ModelViewSet):
             patient=patient
         )
 
-        # Optionally fetch GIS data (distance, travel time) using the patient's location
         if lat and lng and hospital and hospital.location:
             distance_km, travel_min, _, _ = fetch_google_maps_data(
                 lat, lng,
@@ -99,11 +96,11 @@ class ReferralViewSet(ModelViewSet):
                 referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
 
     def perform_update(self, serializer):
-        # ✅ Full CRUD – no status check; any referral owned by the doctor can be updated
+        # Full CRUD – no status restriction
         serializer.save()
 
     def perform_destroy(self, instance):
-        # ✅ Full CRUD – any referral owned by the doctor can be deleted
+        # Full CRUD – any referral can be deleted (by authorised users)
         instance.delete()
 
 
@@ -114,14 +111,13 @@ class ReferralAttachmentViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        # For create/update/delete, allow the doctor who owns the referral
-        return [IsAuthenticated(), IsDoctorOwner()]
+        # Allow Medical Directors/Admins OR the doctor who owns the referral
+        return [IsAuthenticated(), IsMedicalDirectorOrAdminOrDoctorOwner()]
 
     def get_queryset(self):
         user = self.request.user
         if user.role == 'patient':
             return self.queryset.filter(referral__patient=user)
         elif user.role == 'doctor':
-            # Doctors can only see attachments of their own referrals
             return self.queryset.filter(referral__doctor=user)
         return self.queryset

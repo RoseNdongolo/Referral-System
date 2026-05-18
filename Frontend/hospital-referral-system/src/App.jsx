@@ -31,7 +31,6 @@ import DoctorProfile from "./pages/doctor/DoctorProfile.jsx";
 
 // Medical Director Pages
 import MedicalDirectorDashboard from "./pages/medicalDirector/MedicalDirectorDashboard.jsx";
-import OverseeReferrals from "./pages/medicalDirector/OverseeReferrals.jsx";
 import ManageDoctors from "./pages/medicalDirector/ManageDoctors.jsx";
 import ManageDepartments from "./pages/medicalDirector/ManageDepartments.jsx";
 import MedicalDirectorProfile from "./pages/medicalDirector/MedicalDirectorProfile.jsx";
@@ -40,6 +39,8 @@ import ManageHospitals from "./pages/medicalDirector/ManageHospitals.jsx";
 import ManageReceptionists from "./pages/medicalDirector/ManageReceptionists.jsx";
 import ManageSpecialties from "./pages/medicalDirector/ManageSpecialties.jsx";
 import ManageSpecialists from "./pages/medicalDirector/ManageSpecialists.jsx";
+import ManageReferrals from "./pages/medicalDirector/ManageReferrals.jsx";      // List view (inline CRUD)
+import ManageReferralDetail from "./pages/medicalDirector/ManageReferralDetail.jsx"; // Detail view (optional)
 
 // Patient Pages
 import PatientDashboard from "./pages/patient/PatientDashboard.jsx";
@@ -96,7 +97,8 @@ function App() {
           {/* ====================== MEDICAL DIRECTOR ROUTES ====================== */}
           <Route element={<RoleRoute allowedRoles={["medical_director"]} />}>
             <Route path="/medical-director" element={<MedicalDirectorDashboard />} />
-            <Route path="/medical-director/referrals" element={<OverseeReferrals />} />
+            <Route path="/medical-director/referrals" element={<ManageReferrals />} />
+            <Route path="/medical-director/referrals/:id" element={<ManageReferralDetail />} />
             <Route path="/medical-director/doctors" element={<ManageDoctors />} />
             <Route path="/medical-director/departments" element={<ManageDepartments />} />
             <Route path="/medical-director/profile" element={<MedicalDirectorProfile />} />
@@ -106,11 +108,6 @@ function App() {
             <Route path="/medical-director/specialties" element={<ManageSpecialties />} />
             <Route path="/medical-director/specialists" element={<ManageSpecialists />} />
           </Route>
-
-
-
-
-          
 
           {/* ====================== PATIENT ROUTES ====================== */}
           <Route element={<RoleRoute allowedRoles={["patient"]} />}>

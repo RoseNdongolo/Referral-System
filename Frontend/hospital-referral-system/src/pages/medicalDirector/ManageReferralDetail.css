@@ -1,0 +1,275 @@
+/* ManageReferralDetail.css */
+.detail-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.detail-header h1 {
+  font-size: 1.8rem;
+  color: #1f1f1f;
+  border-left: 5px solid #1976d2;
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.back-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #5a6268;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.detail-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section h2 {
+  font-size: 1.3rem;
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-section h2::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background-color: #1976d2;
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.detail-section h3 {
+  font-size: 1rem;
+  margin: 0 0 0.8rem 0;
+  color: #495057;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  color: #212529;
+  font-size: 0.95rem;
+  word-break: break-word;
+  background-color: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+/* Status badge */
+.status-badge {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.status-pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.status-approved {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-rejected {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-completed {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Facilities badges */
+.facilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.facility-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.facility-badge.active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.facility-badge.inactive {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+/* Specialties list */
+.specialties-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.specialty-card {
+  background-color: #f8f9fa;
+  border-left: 3px solid #1976d2;
+  padding: 0.75rem;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.specialty-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #1976d2;
+}
+
+.specialty-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Detail subsection */
+.detail-subsection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #dee2e6;
+}
+
+/* Action buttons */
+.detail-actions {
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.edit-btn, .secondary-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.edit-btn {
+  background-color: #1976d2;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #1565c0;
+}
+
+.secondary-btn {
+  background-color: #6c757d;
+  color: white;
+}
+
+.secondary-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Loading & error states */
+.detail-loading, .detail-error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #6c757d;
+}
+
+.detail-error {
+  color: #c62828;
+  background-color: #ffebee;
+  border-radius: 8px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .facilities-list, .specialties-list {
+    flex-direction: column;
+  }
+}

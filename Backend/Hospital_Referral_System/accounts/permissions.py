@@ -86,26 +86,54 @@ class IsReceptionistOrMedicalDirector(BasePermission):
         return request.user.role in ['receptionist', 'medical_director']
 
 
-# ========== NEW PERMISSION FOR DOCTOR OWNERSHIP ==========
+# ========== PERMISSIONS FOR REFERRAL OWNERSHIP ==========
+
 class IsDoctorOwner(BasePermission):
     """
     Allows a doctor to edit/delete only their own referrals.
-    For create actions, only the doctor role is required.
-    For update/delete, the referral's doctor must match the logged‑in user.
     """
     def has_permission(self, request, view):
-        # Allow any doctor to create a referral
         if view.action == 'create':
             return (request.user and request.user.is_authenticated and
                     (request.user.is_superuser or
                      (request.user.role == "doctor" and hasattr(request.user, 'doctor_profile'))))
-        # For other actions, we rely on has_object_permission
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # Only the doctor who owns the referral can update/delete
         if view.action in ['update', 'partial_update', 'destroy']:
-            # obj is a Referral instance; check obj.doctor
             return obj.doctor == request.user
-        # For retrieve, we keep the existing logic (allow patient, doctor, staff)
         return True
+
+
+class IsMedicalDirectorOrAdmin(BasePermission):
+    """
+    Allows Medical Directors and Admins (and superusers) to perform any action on any referral.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (
+            request.user.is_superuser or
+            request.user.role == 'admin' or
+            request.user.role == 'medical_director'
+        )
+    
+    def has_object_permission(self, request, view, obj):
+        return True
+
+
+class IsMedicalDirectorOrAdminOrDoctorOwner(BasePermission):
+    """
+    Combined permission: Medical Directors/Admins have full access;
+    doctors can only modify their own referrals.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        # Medical Directors and Admins can do anything
+        if user.is_superuser or user.role in ['admin', 'medical_director']:
+            return True
+        # Doctors can only modify their own referrals
+        if user.role == 'doctor' and hasattr(user, 'doctor_profile'):
+            return obj.doctor == user
+        return False
