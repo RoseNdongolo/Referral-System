@@ -15,6 +15,11 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()   # loads variables from .env file
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -51,6 +56,7 @@ INSTALLED_APPS = [
     'receptionists',
     'dashboards',
     'rest_framework_simplejwt',
+
 ]
 
 MIDDLEWARE = [
@@ -166,4 +172,5 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-GOOGLE_MAPS_API_KEY = "AIzaSyDummyTestKeyDoNotUseInProduction123456"
+
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')

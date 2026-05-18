@@ -45,13 +45,15 @@ class PatientProfileSerializer(serializers.ModelSerializer):
     gender = serializers.ChoiceField(choices=['Male', 'Female', 'Other'], required=False, allow_blank=True, allow_null=True)
     address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
 
     class Meta:
         model = PatientProfile
         fields = [
             'id', 'user', 'username', 'email', 'first_name', 'last_name', 'full_name',
             'medical_record_number', 'national_id', 'date_of_birth',
-            'gender', 'address', 'phone_number'
+            'gender', 'address', 'phone_number', 'latitude', 'longitude'
         ]
         read_only_fields = ['user', 'medical_record_number']
 
@@ -73,7 +75,7 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         return ""
 
     def update(self, instance, validated_data):
-        for field in ['phone_number', 'national_id', 'date_of_birth', 'gender', 'address']:
+        for field in ['phone_number', 'national_id', 'date_of_birth', 'gender', 'address', 'latitude', 'longitude']:
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
         instance.save()

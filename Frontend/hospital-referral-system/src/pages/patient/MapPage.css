@@ -1,43 +1,55 @@
-/* MapPage.css */
-
-.map-page {
-  padding: 1.5rem;
+.map-page-container {
+  padding: 20px;
+  font-family: 'Roboto', Arial, sans-serif;
 }
 
-.map-header {
-  margin-bottom: 1rem;
-}
-
-.map-header h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
+.map-page-container h1 {
+  font-size: 1.5rem;
   margin-bottom: 0.5rem;
+  color: #1f1f1f;
 }
 
-.map-header p {
-  color: #475569;
-  font-size: 0.95rem;
-  margin-bottom: 1.5rem;
+.map-page-container p {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #3c4043;
 }
 
-.map-wrapper {
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-  border: 1px solid #e2e8f0;
-}
-
-.loading-state,
-.error-state {
+.map-loading,
+.map-error {
   text-align: center;
-  padding: 2rem;
-  background: #f8fafc;
-  border-radius: 1rem;
-  color: #475569;
+  padding: 50px;
+  font-size: 1.2rem;
 }
 
-@media (max-width: 640px) {
-  .map-page { padding: 1rem; }
-  .map-header h1 { font-size: 1.25rem; }
+.map-error {
+  color: #d32f2f;
+  background-color: #ffebee;
+  border-radius: 4px;
+}
+
+.map-warning {
+  background-color: #fff3e0;
+  color: #e65100;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.map-legend {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #5f6368;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .map-page-container {
+    padding: 10px;
+  }
+  .map-page-container h1 {
+    font-size: 1.2rem;
+  }
 }

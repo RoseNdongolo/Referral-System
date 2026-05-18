@@ -11,10 +11,19 @@ class HospitalSerializer(serializers.ModelSerializer):
     specialty_ids = serializers.PrimaryKeyRelatedField(
         many=True, write_only=True, queryset=Specialty.objects.all(), source='specialties'
     )
+    location = serializers.SerializerMethodField()
 
     class Meta:
         model = Hospital
         fields = '__all__'
+
+    def get_location(self, obj):
+        if obj.location:
+            return {
+                "type": "Point",
+                "coordinates": [obj.location.x, obj.location.y]
+            }
+        return None
 
 class HospitalDepartmentSerializer(serializers.ModelSerializer):
     hospital_name = serializers.CharField(source='hospital.name', read_only=True)
