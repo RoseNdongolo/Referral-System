@@ -1,13 +1,11 @@
 # referrals/views.py
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.contrib.gis.geos import Point
 
-from accounts.permissions import IsDoctor, IsPatientOwner, IsReceptionist
+from accounts.permissions import IsDoctor, IsDoctorOwner
 from hospitals.models import Hospital
 from .models import Referral, ReferralAttachment
 from .serializers import ReferralSerializer, ReferralAttachmentSerializer
@@ -22,10 +20,14 @@ class ReferralViewSet(ModelViewSet):
         if self.action == 'list':
             return [IsAuthenticated()]
         elif self.action == 'retrieve':
-            # Permission is handled in get_object (allow doctor, patient, staff)
+            # Permission is handled inside get_object
             return [IsAuthenticated()]
-        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+        elif self.action == 'create':
+            # Only doctors (or superusers) can create referrals
             return [IsAuthenticated(), IsDoctor()]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            # Only the doctor who owns the referral can edit/delete (any status)
+            return [IsAuthenticated(), IsDoctorOwner()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -33,19 +35,21 @@ class ReferralViewSet(ModelViewSet):
         if user.role == 'patient':
             return self.queryset.filter(patient=user)
         elif user.role == 'doctor':
-            return self.queryset.filter(doctor=user)   # only referrals created by this doctor
-        return self.queryset   # for admin, medical director, etc.
+            return self.queryset.filter(doctor=user)   # doctors see only their own referrals
+        # admin, medical_director, receptionist see all
+        return self.queryset
 
     def get_object(self):
         obj = super().get_object()
         user = self.request.user
+
+        # For retrieve, allow doctor (creator), patient (owner), or staff/admin/medical director
         if self.action == 'retrieve':
-            # Allow doctor who created it, patient who owns it, or staff/admin/medical director
             if obj.doctor == user or obj.patient == user or user.is_staff or user.role in ['admin', 'medical_director']:
                 return obj
             raise PermissionDenied("You do not have permission to view this referral.")
-        elif self.action in ['update', 'partial_update', 'destroy'] and obj.doctor != user:
-            raise PermissionDenied("You can only edit or delete your own referrals.")
+
+        # For update/delete, the permission class (IsDoctorOwner) already checks obj.doctor
         return obj
 
     def perform_create(self, serializer):
@@ -54,7 +58,6 @@ class ReferralViewSet(ModelViewSet):
         patient = None
 
         if consultation_id:
-            # Import locally to avoid circular import
             from patients.models import Consultation
             consultation = get_object_or_404(Consultation, id=consultation_id, doctor=self.request.user)
             patient = consultation.patient
@@ -96,14 +99,11 @@ class ReferralViewSet(ModelViewSet):
                 referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
 
     def perform_update(self, serializer):
-        referral = self.get_object()
-        if referral.status != 'pending':
-            raise ValidationError("Cannot edit a referral that is not pending.")
+        # ✅ Full CRUD – no status check; any referral owned by the doctor can be updated
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.status != 'pending':
-            raise ValidationError("Cannot delete a referral that is not pending.")
+        # ✅ Full CRUD – any referral owned by the doctor can be deleted
         instance.delete()
 
 
@@ -114,10 +114,14 @@ class ReferralAttachmentViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        return [IsAuthenticated(), IsDoctor()]
+        # For create/update/delete, allow the doctor who owns the referral
+        return [IsAuthenticated(), IsDoctorOwner()]
 
     def get_queryset(self):
         user = self.request.user
         if user.role == 'patient':
             return self.queryset.filter(referral__patient=user)
+        elif user.role == 'doctor':
+            # Doctors can only see attachments of their own referrals
+            return self.queryset.filter(referral__doctor=user)
         return self.queryset

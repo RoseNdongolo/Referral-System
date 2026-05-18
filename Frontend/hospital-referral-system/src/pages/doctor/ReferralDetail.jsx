@@ -23,7 +23,6 @@ export default function ReferralDetail() {
     try {
       const res = await doctorService.getReferralById(id);
       setReferral(res.data);
-      // Only store editable fields in editData
       setEditData({
         referral_reason: res.data.referral_reason || '',
         diagnosis: res.data.diagnosis || '',
@@ -44,7 +43,6 @@ export default function ReferralDetail() {
   const handleSaveEdit = async () => {
     try {
       await doctorService.updateReferral(id, editData);
-      // Update local referral with new values
       setReferral({ ...referral, ...editData });
       setIsEditing(false);
       alert('Referral updated successfully');
@@ -72,8 +70,8 @@ export default function ReferralDetail() {
   if (error) return <div className="error-message">{error}</div>;
   if (!referral) return <div className="error-message">Referral not found</div>;
 
-  const isPending = referral.status === 'pending';
-  const canEdit = isPending; // only pending referrals can be edited
+  // ✅ Allow editing for ALL referrals (backend already enforces ownership)
+  const canEdit = true;   // was: const canEdit = referral.status === 'pending';
 
   return (
     <div className="referral-detail-container">
@@ -129,19 +127,17 @@ export default function ReferralDetail() {
         )}
       </div>
 
-      {/* Status change dropdown (for pending referrals only) */}
-      {isPending && (
-        <div className="status-change-section">
-          <h3>Update Status</h3>
-          <select onChange={(e) => handleStatusChange(e.target.value)} value={referral.status} disabled={updatingStatus}>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="completed">Completed</option>
-          </select>
-          {updatingStatus && <span> Updating...</span>}
-        </div>
-      )}
+      {/* Status change dropdown – always visible (doctor can change status anytime) */}
+      <div className="status-change-section">
+        <h3>Update Status</h3>
+        <select onChange={(e) => handleStatusChange(e.target.value)} value={referral.status} disabled={updatingStatus}>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="completed">Completed</option>
+        </select>
+        {updatingStatus && <span> Updating...</span>}
+      </div>
 
       <div className="detail-actions">
         <Link to="/doctor/referral-history" className="back-btn">Back to History</Link>
