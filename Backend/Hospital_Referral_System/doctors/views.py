@@ -47,20 +47,19 @@ class DoctorProfileViewSet(ModelViewSet):
         try:
             self.perform_create(serializer)
         except Exception as e:
-            # Catch any database integrity error (e.g., missing columns, constraints)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    # ==================== Custom update ====================
+    # ==================== Custom update (includes is_active) ====================
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         user_id = self.kwargs.get(self.lookup_field)
         doctor_user = get_object_or_404(User, pk=user_id, role='doctor')
         profile = doctor_user.doctor_profile
 
-        # Update user fields
-        user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username']
+        # Update user fields (add 'is_active')
+        user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'is_active']
         for field in user_fields:
             if field in request.data:
                 val = request.data[field]
@@ -82,11 +81,10 @@ class DoctorProfileViewSet(ModelViewSet):
 
     # ==================== Custom destroy ====================
     def destroy(self, request, *args, **kwargs):
-        """Delete a doctor by user_id, even if the profile is missing."""
         user_id = self.kwargs.get(self.lookup_field)
         try:
             user = User.objects.get(pk=user_id, role='doctor')
-            user.delete()  # cascade deletes profile if exists
+            user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except User.DoesNotExist:
             return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -108,7 +106,6 @@ class DoctorProfileViewSet(ModelViewSet):
             user.delete()
             return Response(status=204)
 
-        # PUT / PATCH
         user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username']
         for field in user_fields:
             if field in request.data:

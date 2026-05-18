@@ -39,8 +39,8 @@ import ManageHospitals from "./pages/medicalDirector/ManageHospitals.jsx";
 import ManageReceptionists from "./pages/medicalDirector/ManageReceptionists.jsx";
 import ManageSpecialties from "./pages/medicalDirector/ManageSpecialties.jsx";
 import ManageSpecialists from "./pages/medicalDirector/ManageSpecialists.jsx";
-import ManageReferrals from "./pages/medicalDirector/ManageReferrals.jsx";      // List view (inline CRUD)
-import ManageReferralDetail from "./pages/medicalDirector/ManageReferralDetail.jsx"; // Detail view (optional)
+import ManageReferrals from "./pages/medicalDirector/ManageReferrals.jsx";      // list page with full CRUD
+import ManageReferralDetail from "./pages/medicalDirector/ManageReferralDetail.jsx"; // detail page
 
 // Patient Pages
 import PatientDashboard from "./pages/patient/PatientDashboard.jsx";
@@ -52,8 +52,10 @@ import Profile from "./pages/patient/Profile.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import AdminHospitals from "./pages/admin/AdminHospitals.jsx";
+import AdminSpecialties from "./pages/admin/AdminSpecialties.jsx";
 import AdminSpecialists from "./pages/admin/AdminSpecialists.jsx";
-import AdminReferrals from "./pages/admin/AdminReferrals.jsx";
+import AdminReferralsList from "./pages/admin/AdminReferralsList.jsx";
+import AdminReferralDetail from "./pages/admin/AdminReferralDetail.jsx";
 
 function App() {
   return (
@@ -97,6 +99,7 @@ function App() {
           {/* ====================== MEDICAL DIRECTOR ROUTES ====================== */}
           <Route element={<RoleRoute allowedRoles={["medical_director"]} />}>
             <Route path="/medical-director" element={<MedicalDirectorDashboard />} />
+            {/* Use ManageReferrals for the list view */}
             <Route path="/medical-director/referrals" element={<ManageReferrals />} />
             <Route path="/medical-director/referrals/:id" element={<ManageReferralDetail />} />
             <Route path="/medical-director/doctors" element={<ManageDoctors />} />
@@ -122,8 +125,10 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/hospitals" element={<AdminHospitals />} />
+            <Route path="/admin/specialties" element={<AdminSpecialties />} />
             <Route path="/admin/specialists" element={<AdminSpecialists />} />
-            <Route path="/admin/referrals" element={<AdminReferrals />} />
+            <Route path="/admin/referrals" element={<AdminReferralsList />} />
+            <Route path="/admin/referrals/:id" element={<AdminReferralDetail />} />
           </Route>
         </Route>
       </Route>

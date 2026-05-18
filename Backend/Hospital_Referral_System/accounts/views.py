@@ -1,3 +1,4 @@
+# accounts/views.py
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
@@ -5,10 +6,10 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 from django.conf import settings
 
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -17,10 +18,15 @@ from .serializers import (
     LoginSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
+    UserSerializer,
 )
+from .permissions import IsAdmin
 
 User = get_user_model()
 token_generator = PasswordResetTokenGenerator()
+
+
+# ========== AUTHENTICATION VIEWS ==========
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -45,12 +51,11 @@ class RegisterView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print("LOGIN DATA:", request.data)
-
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -74,6 +79,7 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
@@ -108,6 +114,7 @@ class ForgotPasswordView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -141,3 +148,28 @@ class ResetPasswordView(APIView):
             {"message": "Password reset successful."},
             status=status.HTTP_200_OK,
         )
+
+
+# ========== ADMIN USER MANAGEMENT VIEWSET ==========
+
+class AdminUserViewSet(viewsets.ModelViewSet):
+    """
+    Full CRUD for User model – only accessible by admin.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        password = self.request.data.get('password')
+        if password:
+            user.set_password(password)
+            user.save()
+
+    def perform_update(self, serializer):
+        user = serializer.save()
+        password = self.request.data.get('password')
+        if password:
+            user.set_password(password)
+            user.save()

@@ -1,3 +1,4 @@
+# doctors/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -33,21 +34,22 @@ class DoctorSelfSerializer(serializers.Serializer):
         return ""
 
 
+# ========== UPDATED DoctorListSerializer for admin ==========
 class DoctorListSerializer(serializers.ModelSerializer):
-    doctor_id = serializers.IntegerField(source='id')
-    full_name = serializers.SerializerMethodField()
-    specialization = serializers.CharField(source='doctor_profile.specialization')
-    is_available = serializers.BooleanField(source='doctor_profile.is_available')
-    department = serializers.CharField(source='doctor_profile.department')
+    id = serializers.IntegerField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    specialization = serializers.CharField(source='doctor_profile.specialization', default='')
+    is_active = serializers.BooleanField()
 
     class Meta:
         model = User
-        fields = ['doctor_id', 'username', 'email', 'full_name', 'specialization', 'is_available', 'department']
-
-    def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}".strip()
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'specialization', 'is_active']
 
 
+# ========== Registration serializer remains the same ==========
 class DoctorRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=8)
@@ -89,19 +91,17 @@ class DoctorRegistrationSerializer(serializers.Serializer):
             department=department,
             is_available=is_available
         )
-        return {'user': user, 'doctor_profile': profile}   # return a dict for to_representation
+        return {'user': user, 'doctor_profile': profile}
 
     def to_representation(self, instance):
-        # instance is the dict returned by create()
         user = instance['user']
         profile = instance['doctor_profile']
-        # Use the same representation as DoctorListSerializer for consistency
         return {
-            'doctor_id': user.id,
+            'id': user.id,
             'username': user.username,
             'email': user.email,
-            'full_name': f"{user.first_name} {user.last_name}".strip(),
+            'first_name': user.first_name,
+            'last_name': user.last_name,
             'specialization': profile.specialization,
-            'department': profile.department,
-            'is_available': profile.is_available,
+            'is_active': user.is_active,
         }
