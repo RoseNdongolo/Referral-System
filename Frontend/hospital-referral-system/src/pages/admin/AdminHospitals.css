@@ -112,3 +112,64 @@
 .hospitals-table { width: 100%; border-collapse: collapse; }
 .hospitals-table th, .hospitals-table td { padding: 0.75rem; border-bottom: 1px solid #eee; text-align: left; }
 .checkbox-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+.inline-add-specialty {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+.inline-add-specialty input {
+  flex: 1;
+  padding: 0.3rem;
+}
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+.multi-select {
+  min-height: 100px;
+}
+
+.inline-add-specialty {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.inline-add-specialty input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 150px;
+}
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+.multi-select {
+  min-height: 100px;
+}
+.hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}

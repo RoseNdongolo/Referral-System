@@ -1,3 +1,4 @@
+# hospitals/serializers.py
 from rest_framework import serializers
 from .models import Hospital, HospitalDepartment, Specialty
 
@@ -9,7 +10,11 @@ class SpecialtySerializer(serializers.ModelSerializer):
 class HospitalSerializer(serializers.ModelSerializer):
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
-        many=True, write_only=True, queryset=Specialty.objects.all(), source='specialties'
+        many=True,
+        write_only=True,
+        queryset=Specialty.objects.all(),
+        source='specialties',
+        required=False          # <-- make it optional
     )
     location = serializers.SerializerMethodField()
 
