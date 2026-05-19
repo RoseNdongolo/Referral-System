@@ -1,3 +1,4 @@
+# patients/views.py
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -41,6 +42,9 @@ class PatientProfileViewSet(ModelViewSet):
             permission_classes = [IsAuthenticated, IsReceptionist]
         elif self.action in ['my_consultations', 'update_consultation_status', 'consultation_detail']:
             permission_classes = [IsAuthenticated, IsDoctor]
+        # Add patient consultation actions
+        elif self.action in ['patient_consultations', 'patient_consultation_detail']:
+            permission_classes = [IsAuthenticated, IsPatientOwner]
         else:
             permission_classes = [IsAuthenticated, IsPatientOwner]
         return [permission() for permission in permission_classes]
@@ -229,5 +233,20 @@ class PatientProfileViewSet(ModelViewSet):
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
     def consultation_detail(self, request, pk=None):
         consultation = get_object_or_404(Consultation, pk=pk, doctor=request.user)
+        serializer = ConsultationSerializer(consultation)
+        return Response(serializer.data)
+
+    # ==================== Patient consultation actions (for viewing results) ====================
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsPatientOwner], url_path='my-consultations')
+    def patient_consultations(self, request):
+        """Return consultations for the logged-in patient."""
+        consultations = Consultation.objects.filter(patient=request.user).select_related('doctor')
+        serializer = ConsultationSerializer(consultations, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsPatientOwner], url_path='consultation-detail')
+    def patient_consultation_detail(self, request, pk=None):
+        """Return a single consultation detail for the patient."""
+        consultation = get_object_or_404(Consultation, pk=pk, patient=request.user)
         serializer = ConsultationSerializer(consultation)
         return Response(serializer.data)

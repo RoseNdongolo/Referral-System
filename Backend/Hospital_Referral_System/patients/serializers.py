@@ -1,3 +1,4 @@
+# patients/serializers.py
 from rest_framework import serializers
 from .models import PatientProfile, Consultation
 from django.contrib.auth import get_user_model
@@ -75,9 +76,22 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         return ""
 
     def update(self, instance, validated_data):
+        # Update the fields that are directly set
         for field in ['phone_number', 'national_id', 'date_of_birth', 'gender', 'address', 'latitude', 'longitude']:
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
+        
+        # If address was changed or provided, geocode it
+        if 'address' in validated_data and validated_data['address']:
+            lat, lng = geocode_address(validated_data['address'])
+            if lat is not None and lng is not None:
+                instance.latitude = lat
+                instance.longitude = lng
+            else:
+                # Optional: clear existing coordinates if geocoding fails
+                instance.latitude = None
+                instance.longitude = None
+        
         instance.save()
         return instance
 

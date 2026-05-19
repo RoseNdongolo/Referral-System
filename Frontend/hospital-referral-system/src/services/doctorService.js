@@ -8,11 +8,11 @@ const doctorService = {
   deleteMyAccount: () => api.delete('/doctors/me/'),
   changePassword: (data) => api.post('/doctors/change_password/', data),
 
-  // Consultations (fixed – use doctor's own endpoint)
-  getMyConsultations: () => api.get('/doctors/my_consultations/'),     // ✅ corrected
-  getConsultationDetail: (id) => api.get(`/patients/patient-profiles/${id}/consultation_detail/`), // may need a doctor version
+  // Consultations
+  getMyConsultations: () => api.get('/doctors/my_consultations/'),
+  getConsultationDetail: (id) => api.get(`/doctors/consultations/${id}/`),   // ✅ changed
   updateConsultationStatus: (consultationId, status, extra = {}) => 
-    api.patch(`/patients/patient-profiles/${consultationId}/update_consultation_status/`, { status, ...extra }),
+    api.patch(`/doctors/consultations/${consultationId}/update_status/`, { status, ...extra }), // optional – you can keep as is or change
 
   // Referrals
   getAllReferrals: () => api.get('/referrals/referrals/'),

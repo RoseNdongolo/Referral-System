@@ -48,6 +48,7 @@ const receptionistLinks = [
   const patientLinks = [
     { to: "/patient", label: "Dashboard" },
     { to: "/patient/my-referrals", label: "My Referrals" },
+    { to: "/patient/consultations", label: "Medical Records" }, 
     { to: "/patient/map", label: "Navigation Map" },
     { to: "/patient/profile", label: "Profile" },
   ];

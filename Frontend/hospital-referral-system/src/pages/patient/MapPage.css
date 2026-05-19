@@ -1,55 +1,98 @@
-.map-page-container {
-  padding: 20px;
-  font-family: 'Roboto', Arial, sans-serif;
+/* MapPage.css */
+.map-page {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
 }
 
-.map-page-container h1 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+.map-header {
+  background: white;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.map-header h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem 0;
   color: #1f1f1f;
+  border-left: 5px solid #1976d2;
+  padding-left: 1rem;
 }
 
-.map-page-container p {
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+.map-header p {
+  margin: 0.25rem 0;
   color: #3c4043;
+  font-size: 0.9rem;
 }
 
-.map-loading,
-.map-error {
+.map-header p strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.map-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.loading-state,
+.error-state {
   text-align: center;
-  padding: 50px;
+  padding: 3rem;
   font-size: 1.2rem;
+  color: #6c757d;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.map-error {
-  color: #d32f2f;
+.error-state {
+  color: #c62828;
   background-color: #ffebee;
-  border-radius: 4px;
 }
 
 .map-warning {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
   background-color: #fff3e0;
   color: #e65100;
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
   text-align: center;
+  border-left: 4px solid #e65100;
 }
 
-.map-legend {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: #5f6368;
-  text-align: center;
+/* Custom styling for the map container (the inner div) */
+.map-wrapper .gm-style {
+  border-radius: 0 !important;
 }
 
-@media (max-width: 600px) {
-  .map-page-container {
-    padding: 10px;
+/* Optional: style for the advanced marker pin label */
+.gm-style .gm-style-iw-c {
+  border-radius: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .map-page {
+    margin: 1rem auto;
+    padding: 0 0.5rem;
   }
-  .map-page-container h1 {
-    font-size: 1.2rem;
+  .map-header {
+    padding: 1rem;
+  }
+  .map-header h1 {
+    font-size: 1.3rem;
+  }
+  .loading-state,
+  .error-state {
+    padding: 2rem;
+    font-size: 1rem;
   }
 }

@@ -30,7 +30,6 @@ export default function ConsultationDetail() {
     fetchSpecialties();
   }, [id]);
 
-  // Pre‑fill referral form when consultation loads
   useEffect(() => {
     if (consultation) {
       setReferralData(prev => ({
@@ -45,6 +44,7 @@ export default function ConsultationDetail() {
   const fetchConsultation = async () => {
     try {
       const res = await doctorService.getConsultationDetail(id);
+      console.log('Consultation API response:', res.data); // ✅ debug
       setConsultation(res.data);
       setStatus(res.data.status);
       setDiagnosis(res.data.diagnosis || '');

@@ -20,10 +20,11 @@ export default function ManageDoctors() {
     phone_number: '',
     specialization_id: '',
     department_id: '',
-    is_available: true
+    is_available: true,
   });
   const [modalError, setModalError] = useState('');
   const [modalSuccess, setModalSuccess] = useState('');
+  const [modalKey, setModalKey] = useState(Date.now()); // force remount on open
 
   useEffect(() => {
     loadDoctors();
@@ -37,10 +38,11 @@ export default function ManageDoctors() {
         const doctorsList = (res.data || []).map(doc => ({
           ...doc,
           id: doc.id,
-          specialization_name: doc.specialization_name || '',
-          specialization_id: doc.specialization_id || null,
-          department_name: doc.department_name || '',
-          department_id: doc.department_id || null,
+          specialization_id: doc.specialization_id ?? '',
+          department_id: doc.department_id ?? '',
+          first_name: doc.first_name ?? '',
+          last_name: doc.last_name ?? '',
+          phone_number: doc.phone_number ?? '',
         }));
         setDoctors(doctorsList);
       })
@@ -83,17 +85,18 @@ export default function ManageDoctors() {
     setEditingDoctor(doctor);
     setModalError('');
     setModalSuccess('');
+    setModalKey(Date.now()); // force re-mount
     if (doctor) {
       setFormData({
-        username: doctor.username || '',
+        username: doctor.username ?? '',
         password: '',
-        first_name: doctor.first_name || '',
-        last_name: doctor.last_name || '',
-        email: doctor.email || '',
-        phone_number: doctor.phone_number || '',
-        specialization_id: doctor.specialization_id || '',
-        department_id: doctor.department_id || '',
-        is_available: doctor.is_available !== undefined ? doctor.is_available : true
+        first_name: doctor.first_name ?? '',
+        last_name: doctor.last_name ?? '',
+        email: doctor.email ?? '',
+        phone_number: doctor.phone_number ?? '',
+        specialization_id: doctor.specialization_id ?? '',
+        department_id: doctor.department_id ?? '',
+        is_available: doctor.is_available ?? true,
       });
     } else {
       setFormData({
@@ -105,7 +108,7 @@ export default function ManageDoctors() {
         phone_number: '',
         specialization_id: '',
         department_id: '',
-        is_available: true
+        is_available: true,
       });
     }
     setShowModal(true);
@@ -126,7 +129,7 @@ export default function ManageDoctors() {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -137,8 +140,8 @@ export default function ManageDoctors() {
     try {
       const payload = {
         ...formData,
-        specialization_id: formData.specialization_id || null,
-        department_id: formData.department_id || null,
+        specialization_id: formData.specialization_id ? parseInt(formData.specialization_id) : null,
+        department_id: formData.department_id ? parseInt(formData.department_id) : null,
       };
       if (editingDoctor) {
         await medicalDirectorService.updateDoctor(editingDoctor.id, payload);
@@ -225,7 +228,7 @@ export default function ManageDoctors() {
 
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} key={modalKey}>
             <div className="modal-header">
               <h3>{editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</h3>
               <button className="close-btn" onClick={closeModal}>&times;</button>
@@ -233,26 +236,28 @@ export default function ManageDoctors() {
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="form-row">
-                  <div className="form-group"><label>Username *</label><input name="username" value={formData.username} onChange={handleChange} required /></div>
-                  <div className="form-group"><label>Email *</label><input type="email" name="email" value={formData.email} onChange={handleChange} required /></div>
+                  <div className="form-group"><label>Username *</label><input name="username" value={formData.username ?? ''} onChange={handleChange} required /></div>
+                  <div className="form-group"><label>Email *</label><input type="email" name="email" value={formData.email ?? ''} onChange={handleChange} required /></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label>First Name *</label><input name="first_name" value={formData.first_name} onChange={handleChange} required /></div>
-                  <div className="form-group"><label>Last Name *</label><input name="last_name" value={formData.last_name} onChange={handleChange} required /></div>
+                  <div className="form-group"><label>First Name *</label><input name="first_name" value={formData.first_name ?? ''} onChange={handleChange} required /></div>
+                  <div className="form-group"><label>Last Name *</label><input name="last_name" value={formData.last_name ?? ''} onChange={handleChange} required /></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label>Phone Number</label><input name="phone_number" value={formData.phone_number} onChange={handleChange} /></div>
-                  <div className="form-group"><label>Password {!editingDoctor && '*'}</label><input type="password" name="password" value={formData.password} onChange={handleChange} required={!editingDoctor} /></div>
+                  <div className="form-group"><label>Phone Number</label><input name="phone_number" value={formData.phone_number ?? ''} onChange={handleChange} /></div>
+                  <div className="form-group"><label>Password {!editingDoctor && '*'}</label><input type="password" name="password" value={formData.password ?? ''} onChange={handleChange} required={!editingDoctor} /></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label>Specialty</label>
-                    <select name="specialization_id" value={formData.specialization_id} onChange={handleChange}>
+                  <div className="form-group">
+                    <label>Specialty</label>
+                    <select name="specialization_id" value={formData.specialization_id ?? ''} onChange={handleChange}>
                       <option value="">Select specialty</option>
                       {specialties.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </div>
-                  <div className="form-group"><label>Department</label>
-                    <select name="department_id" value={formData.department_id} onChange={handleChange}>
+                  <div className="form-group">
+                    <label>Department</label>
+                    <select name="department_id" value={formData.department_id ?? ''} onChange={handleChange}>
                       <option value="">Select department</option>
                       {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>

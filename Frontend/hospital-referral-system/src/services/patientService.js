@@ -1,3 +1,4 @@
+// src/services/patientService.js
 import api from './api';
 
 const patientService = {
@@ -7,6 +8,8 @@ const patientService = {
   getReferralById: (id) => api.get(`/referrals/referrals/${id}/`),
   deleteMyAccount: () => api.delete('/patients/patient-profiles/me/'),
   changePassword: (data) => api.post('/patients/patient-profiles/change_password/', data),
+  getMyConsultations: () => api.get('/patients/patient-profiles/my-consultations/'),
+  getConsultationDetail: (id) => api.get(`/patients/patient-profiles/${id}/consultation-detail/`),
 };
 
 export default patientService;

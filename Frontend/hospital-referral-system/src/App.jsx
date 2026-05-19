@@ -47,6 +47,8 @@ import PatientDashboard from "./pages/patient/PatientDashboard.jsx";
 import MyReferrals from "./pages/patient/MyReferrals.jsx";
 import MapPage from "./pages/patient/MapPage.jsx";
 import Profile from "./pages/patient/Profile.jsx";
+import PatientConsultations from "./pages/patient/PatientConsultations.jsx";
+import PatientConsultationDetail from "./pages/patient/PatientConsultationDetail.jsx";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
@@ -119,6 +121,8 @@ function App() {
             <Route path="/patient/my-referrals" element={<MyReferrals />} />
             <Route path="/patient/map" element={<MapPage />} />
             <Route path="/patient/profile" element={<Profile />} />
+            <Route path="/patient/consultations" element={<PatientConsultations />} />
+            <Route path="/patient/consultations/:id" element={<PatientConsultationDetail />} />
           </Route>
 
           {/* ====================== ADMIN ROUTES ====================== */}

@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from rest_framework import generics
+from patients.serializers import ConsultationSerializer
 
 from accounts.permissions import IsMedicalDirector, IsDoctor, IsAdminOrMedicalDirector
 from .models import DoctorProfile
@@ -16,7 +18,7 @@ from .serializers import (
     DoctorRegistrationSerializer
 )
 from hospitals.models import Specialty, HospitalDepartment
-from patients.models import Consultation   # <-- needed for my_consultations
+from patients.models import Consultation
 
 User = get_user_model()
 
@@ -39,7 +41,7 @@ class DoctorProfileViewSet(ModelViewSet):
         elif self.action in ['all_doctors', 'toggle_active', 'update_specialty']:
             permission_classes = [IsAuthenticated, IsAdminOrMedicalDirector]
         elif self.action == 'my_consultations':
-            permission_classes = [IsAuthenticated, IsDoctor]   # <-- important
+            permission_classes = [IsAuthenticated, IsDoctor]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
@@ -58,7 +60,11 @@ class DoctorProfileViewSet(ModelViewSet):
         partial = kwargs.pop('partial', False)
         user_id = self.kwargs.get(self.lookup_field)
         doctor_user = get_object_or_404(User, pk=user_id, role='doctor')
-        profile = doctor_user.doctor_profile
+
+        # ✅ Auto‑create profile if missing
+        profile, created = DoctorProfile.objects.get_or_create(user=doctor_user)
+        if created:
+            print(f"Auto-created doctor profile for {doctor_user.username}")
 
         user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'username', 'is_active']
         for field in user_fields:
@@ -95,10 +101,10 @@ class DoctorProfileViewSet(ModelViewSet):
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated, IsDoctor])
     def me(self, request):
         user = request.user
-        try:
-            profile = user.doctor_profile
-        except DoctorProfile.DoesNotExist:
-            return Response({'error': 'Doctor profile not found. Please contact admin.'}, status=404)
+        # ✅ Auto‑create profile if missing
+        profile, created = DoctorProfile.objects.get_or_create(user=user)
+        if created:
+            print(f"Auto-created doctor profile for {user.username}")
 
         if request.method == 'GET':
             serializer = DoctorSelfSerializer({'user': user, 'doctor_profile': profile})
@@ -155,7 +161,8 @@ class DoctorProfileViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsAdminOrMedicalDirector])
     def toggle_active(self, request, user_id=None):
         doctor = get_object_or_404(User, pk=user_id, role='doctor')
-        profile = doctor.doctor_profile
+        # ✅ Auto‑create profile if missing
+        profile, created = DoctorProfile.objects.get_or_create(user=doctor)
         profile.is_available = not profile.is_available
         profile.save()
         return Response({'is_available': profile.is_available})
@@ -163,15 +170,16 @@ class DoctorProfileViewSet(ModelViewSet):
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsAdminOrMedicalDirector])
     def update_specialty(self, request, user_id=None):
         doctor = get_object_or_404(User, pk=user_id, role='doctor')
+        # ✅ Auto‑create profile if missing
+        profile, created = DoctorProfile.objects.get_or_create(user=doctor)
         new_specialty_id = request.data.get('specialization_id')
         if new_specialty_id:
             specialty = Specialty.objects.filter(id=new_specialty_id).first()
-            doctor.doctor_profile.specialization = specialty
-            doctor.doctor_profile.save()
+            profile.specialization = specialty
+            profile.save()
             return Response({'specialization_id': specialty.id if specialty else None})
         return Response({'error': 'specialization_id required'}, status=400)
 
-    # ========== Doctor's own consultations ==========
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
     def my_consultations(self, request):
         consultations = Consultation.objects.filter(doctor=request.user).select_related('patient')
@@ -183,5 +191,46 @@ class DoctorProfileViewSet(ModelViewSet):
                 'patient_mrn': getattr(c.patient.patient_profile, 'medical_record_number', 'N/A'),
                 'status': c.status,
                 'assigned_at': c.assigned_at,
+                'chief_complaint': c.chief_complaint or '', 
             })
         return Response(data)
+
+# doctors/views.py (add at the bottom)
+
+class DoctorConsultationDetailView(generics.RetrieveAPIView):
+    queryset = Consultation.objects.all()
+    serializer_class = ConsultationSerializer
+    permission_classes = [IsAuthenticated, IsDoctor]
+
+    def get_queryset(self):
+        return Consultation.objects.filter(doctor=self.request.user)
+    
+
+# doctors/views.py (add after DoctorConsultationDetailView)
+
+class DoctorConsultationStatusUpdateView(generics.UpdateAPIView):
+    """
+    Allows a doctor to update consultation status, diagnosis, test results, and notes.
+    """
+    permission_classes = [IsAuthenticated, IsDoctor]
+    queryset = Consultation.objects.all()
+    lookup_field = 'pk'
+
+    def patch(self, request, *args, **kwargs):
+        consultation = self.get_object()
+        # Ensure the doctor is the assigned doctor
+        if consultation.doctor != request.user:
+            return Response({'error': 'Not your consultation'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Update status if provided
+        if 'status' in request.data:
+            consultation.status = request.data['status']
+        # Update diagnosis, test_results, notes if provided
+        if 'diagnosis' in request.data:
+            consultation.diagnosis = request.data['diagnosis']
+        if 'test_results' in request.data:
+            consultation.test_results = request.data['test_results']
+        if 'notes' in request.data:
+            consultation.notes = request.data['notes']
+        consultation.save()
+        return Response({'status': consultation.status, 'message': 'Updated successfully'})

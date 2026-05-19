@@ -1,13 +1,12 @@
 // src/pages/patient/MapPage.jsx
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
 import patientService from '../../services/patientService';
 import './MapPage.css';
 
 const DEFAULT_CENTER = { lat: -26.2041, lng: 28.0473 };
 
-// Decode Google’s encoded polyline
 const decodePolyline = (encoded) => {
   let points = [];
   let index = 0, lat = 0, lng = 0;
@@ -33,7 +32,6 @@ const decodePolyline = (encoded) => {
   return points;
 };
 
-// Component that fetches and draws the route
 const RouteLayer = ({ origin, destination, setRouteInfo }) => {
   const map = useMap();
   const [polyline, setPolyline] = useState(null);
@@ -98,6 +96,7 @@ const RouteLayer = ({ origin, destination, setRouteInfo }) => {
 
 export default function MapPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const referralId = searchParams.get('referral');
   const [referral, setReferral] = useState(null);
   const [patientLocation, setPatientLocation] = useState(null);
@@ -105,6 +104,7 @@ export default function MapPage() {
   const [routeInfo, setRouteInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
 
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const mapId = import.meta.env.VITE_MAP_ID;
@@ -121,12 +121,11 @@ export default function MapPage() {
       return;
     }
     if (!referralId) {
-      setError('No referral selected.');
-      setLoading(false);
+      navigate('/patient/my-referrals');
       return;
     }
     fetchData();
-  }, [referralId]);
+  }, [referralId, navigate]);
 
   const fetchData = async () => {
     try {
@@ -141,8 +140,7 @@ export default function MapPage() {
           lng: parseFloat(patient.longitude),
         });
       } else {
-        setError('Patient address not geocoded. Please update your address.');
-        return;
+        setWarning('Patient address not geocoded. Please update your address to see your location on the map.');
       }
 
       const hospital = referralRes.data.hospital_details;
@@ -164,19 +162,20 @@ export default function MapPage() {
 
   if (loading) return <div className="loading-state">Loading map data...</div>;
   if (error) return <div className="error-state">{error}</div>;
-  if (!referral || !patientLocation || !hospitalLocation) return null;
+  if (!referral || !hospitalLocation) return null;
 
-  const mapCenter = patientLocation;
+  const mapCenter = patientLocation || hospitalLocation || DEFAULT_CENTER;
 
   return (
     <div className="map-page">
       <div className="map-header">
         <h1>Navigation to {referral.hospital_details?.name}</h1>
         <p>
-          <strong>Distance:</strong> {routeInfo ? `${routeInfo.distance} km` : 'Calculating...'} &nbsp;|&nbsp;
-          <strong>Est. travel time:</strong> {routeInfo ? `${routeInfo.duration} min` : 'Calculating...'}
+          <strong>Distance:</strong> {routeInfo ? `${routeInfo.distance} km` : (referral.distance_km ? `${referral.distance_km} km` : 'Calculating...')} &nbsp;|&nbsp;
+          <strong>Est. travel time:</strong> {routeInfo ? `${routeInfo.duration} min` : (referral.estimated_travel_time_minutes ? `${referral.estimated_travel_time_minutes} min` : 'Calculating...')}
         </p>
         <p>Referral reason: {referral.referral_reason}</p>
+        {warning && <div className="map-warning">{warning}</div>}
       </div>
       <div className="map-wrapper">
         <APIProvider apiKey={envApiKey}>
@@ -186,13 +185,19 @@ export default function MapPage() {
             style={{ width: '100%', height: '500px' }}
             mapId={mapId}
           >
-            <AdvancedMarker position={patientLocation}>
-              <Pin glyph="P" background="#4285F4" borderColor="#fff" />
-            </AdvancedMarker>
-            <AdvancedMarker position={hospitalLocation}>
-              <Pin glyph="H" background="#EA4335" borderColor="#fff" />
-            </AdvancedMarker>
-            <RouteLayer origin={patientLocation} destination={hospitalLocation} setRouteInfo={setRouteInfo} />
+            {patientLocation && (
+              <AdvancedMarker position={patientLocation}>
+                <Pin glyph="P" background="#4285F4" borderColor="#fff" />
+              </AdvancedMarker>
+            )}
+            {hospitalLocation && (
+              <AdvancedMarker position={hospitalLocation}>
+                <Pin glyph="H" background="#EA4335" borderColor="#fff" />
+              </AdvancedMarker>
+            )}
+            {patientLocation && hospitalLocation && (
+              <RouteLayer origin={patientLocation} destination={hospitalLocation} setRouteInfo={setRouteInfo} />
+            )}
           </Map>
         </APIProvider>
       </div>
