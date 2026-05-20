@@ -1,32 +1,53 @@
 // src/pages/medicalDirector/ManageSpecialists.jsx
 import { useEffect, useState } from 'react';
-import api from '../../services/api';
+import medicalDirectorService from '../../services/medicalDirectorService';
 import './ManageSpecialists.css';
 
 export default function ManageSpecialists() {
-  const [specialists, setSpecialists] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
-  const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', specialty: '', hospital: '', department: '', phone: '', email: ''
+    username: '',
+    email: '',
+    first_name: '',
+    last_name: '',
+    specialization_id: '',
+    phone_number: '',
+    password: '',
+    is_active: true,
   });
 
   useEffect(() => {
-    fetchSpecialists();
+    fetchDoctors();
     fetchSpecialties();
-    fetchHospitals();
   }, []);
 
-  const fetchSpecialists = async () => {
+  const fetchDoctors = async () => {
     try {
-      const res = await api.get('/specialists/specialists/');
-      setSpecialists(res.data);
+      const res = await medicalDirectorService.getAllDoctors();
+      let doctorsList = [];
+      if (res.data && Array.isArray(res.data)) {
+        doctorsList = res.data;
+      } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
+        doctorsList = res.data.results;
+      }
+      const normalized = doctorsList.map(doc => ({
+        ...doc,
+        id: doc.id,
+        specialization_name: doc.specialization_name || '',
+        specialization_id: doc.specialization_id,
+        first_name: doc.first_name || '',
+        last_name: doc.last_name || '',
+        phone_number: doc.phone_number || '',
+        is_active: doc.is_active !== undefined ? doc.is_active : true,
+      }));
+      setDoctors(normalized);
     } catch (err) {
-      setError('Failed to load specialists');
+      setError('Failed to load doctors');
     } finally {
       setLoading(false);
     }
@@ -34,152 +55,140 @@ export default function ManageSpecialists() {
 
   const fetchSpecialties = async () => {
     try {
-      const res = await api.get('/hospitals/specialties/');
-      setSpecialties(res.data);
+      const res = await medicalDirectorService.getAllSpecialties();
+      setSpecialties(res.data || []);
     } catch (err) {
-      console.error('Failed to load specialties');
+      console.error(err);
     }
   };
 
-  const fetchHospitals = async () => {
-    try {
-      const res = await api.get('/hospitals/hospitals/');
-      setHospitals(res.data);
-    } catch (err) {
-      console.error('Failed to load hospitals');
+  const handleOpenModal = (doc = null) => {
+    if (doc) {
+      setEditing(doc);
+      setFormData({
+        username: doc.username || '',
+        email: doc.email || '',
+        first_name: doc.first_name || '',
+        last_name: doc.last_name || '',
+        specialization_id: doc.specialization_id !== undefined ? doc.specialization_id : '',
+        phone_number: doc.phone_number || '',
+        password: '',
+        is_active: doc.is_active !== undefined ? doc.is_active : true,
+      });
+    } else {
+      setEditing(null);
+      setFormData({
+        username: '',
+        email: '',
+        first_name: '',
+        last_name: '',
+        specialization_id: '',
+        phone_number: '',
+        password: '',
+        is_active: true,
+      });
     }
+    setShowModal(true);
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await api.put(`/specialists/specialists/${editingId}/`, formData);
+      if (editing) {
+        const updateData = { ...formData };
+        if (!updateData.password) delete updateData.password;
+        if (updateData.specialization_id)
+          updateData.specialization_id = parseInt(updateData.specialization_id);
+        else
+          updateData.specialization_id = null;
+        await medicalDirectorService.updateDoctor(editing.id, updateData);
       } else {
-        await api.post('/specialists/specialists/', formData);
+        if (!formData.password) {
+          setError('Password is required for new doctor');
+          return;
+        }
+        const payload = {
+          ...formData,
+          specialization_id: formData.specialization_id ? parseInt(formData.specialization_id) : null,
+        };
+        await medicalDirectorService.createDoctor(payload);
       }
-      resetForm();
-      fetchSpecialists();
+      setShowModal(false);
+      fetchDoctors();
     } catch (err) {
-      setError('Save failed');
+      setError('Failed to save doctor');
     }
-  };
-
-  const handleEdit = (spec) => {
-    setEditingId(spec.id);
-    setFormData({
-      name: spec.name || '',
-      specialty: spec.specialty || '',
-      hospital: spec.hospital || '',
-      department: spec.department || '',
-      phone: spec.phone || '',
-      email: spec.email || '',
-    });
-    setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Delete this specialist permanently?')) {
-      try {
-        await api.delete(`/specialists/specialists/${id}/`);
-        fetchSpecialists();
-      } catch (err) {
-        setError('Delete failed');
-      }
+    if (!window.confirm('Delete this doctor permanently?')) return;
+    try {
+      await medicalDirectorService.deleteDoctor(id);
+      fetchDoctors();
+    } catch (err) {
+      setError('Failed to delete doctor');
     }
   };
 
-  const resetForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setFormData({ name: '', specialty: '', hospital: '', department: '', phone: '', email: '' });
-    setError('');
+  const handleToggleActive = async (doctor) => {
+    try {
+      await medicalDirectorService.toggleDoctorActive(doctor.id);
+      fetchDoctors();
+    } catch (err) {
+      setError('Failed to update status');
+    }
   };
 
-  if (loading) return <div className="loading-state">Loading specialists...</div>;
+  if (loading) return <div className="loading-state">Loading doctors...</div>;
 
   return (
     <div className="manage-specialists-container">
-      <h1>Manage External Specialists</h1>
-      <button className="add-btn" onClick={() => setShowForm(true)}>+ Add Specialist</button>
-
-      {showForm && (
-        <div className="form-modal">
-          <div className="form-card">
-            <h3>{editingId ? 'Edit Specialist' : 'New Specialist'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Name *</label>
-                <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-              </div>
-              <div className="form-group">
-                <label>Specialty</label>
-                <select name="specialty" value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})}>
-                  <option value="">Select specialty</option>
-                  {specialties.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Hospital (affiliation)</label>
-                <select name="hospital" value={formData.hospital} onChange={e => setFormData({...formData, hospital: e.target.value})}>
-                  <option value="">Select hospital</option>
-                  {hospitals.map(h => (
-                    <option key={h.id} value={h.id}>{h.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Department</label>
-                <input name="department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label>Phone</label>
-                <input name="phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input name="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="save-btn">Save</button>
-                <button type="button" className="cancel-btn" onClick={resetForm}>Cancel</button>
-              </div>
-              {error && <div className="error-message">{error}</div>}
-            </form>
-          </div>
-        </div>
-      )}
-
+      <div className="admin-header">
+        <h1>Manage Specialists (Doctors)</h1>
+        <button onClick={() => handleOpenModal()} className="btn-primary">+ Add Doctor</button>
+      </div>
+      {error && <div className="error-message">{error}</div>}
       <div className="specialists-table-wrapper">
         <table className="specialists-table">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Specialty</th>
-              <th>Hospital</th>
-              <th>Phone</th>
               <th>Email</th>
+              <th>Specialty</th>
+              <th>Phone</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {specialists.length === 0 ? (
-              <tr>
-                <td colSpan="6">No specialists found.</td>
-              </tr>
+            {doctors.length === 0 ? (
+              <tr><td colSpan="6">No doctors found.</td></tr>
             ) : (
-              specialists.map(s => (
-                <tr key={s.id}>
-                  <td>{s.name}</td>
-                  <td>{s.specialty_name || '-'}</td>
-                  <td>{s.hospital_name || '-'}</td>
-                  <td>{s.phone || '-'}</td>
-                  <td>{s.email || '-'}</td>
+              doctors.map(doc => (
+                <tr key={doc.id}>
+                  <td>{doc.first_name} {doc.last_name} ({doc.username})</td>
+                  <td>{doc.email}</td>
+                  <td>{doc.specialization_name || 'Not set'}</td>
+                  <td>{doc.phone_number || '-'}</td>
                   <td>
-                    <button onClick={() => handleEdit(s)}>Edit</button>
-                    <button onClick={() => handleDelete(s.id)}>Delete</button>
+                    <button
+                      className={`status-toggle ${doc.is_active ? 'active' : 'inactive'}`}
+                      onClick={() => handleToggleActive(doc)}
+                    >
+                      {doc.is_active ? 'Active' : 'Inactive'}
+                    </button>
+                  </td>
+                  <td className="action-buttons">
+                    <button onClick={() => handleOpenModal(doc)} className="edit-btn">Edit</button>
+                    <button onClick={() => handleDelete(doc.id)} className="delete-btn">Delete</button>
                   </td>
                 </tr>
               ))
@@ -187,6 +196,66 @@ export default function ManageSpecialists() {
           </tbody>
         </table>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>{editing ? 'Edit Doctor' : 'Add Doctor'}</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Username *</label>
+                <input name="username" value={formData.username} onChange={handleChange} required />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input name="first_name" value={formData.first_name} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input name="last_name" value={formData.last_name} onChange={handleChange} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Phone Number</label>
+                <input name="phone_number" value={formData.phone_number} onChange={handleChange} />
+              </div>
+              <div className="form-group">
+                <label>Specialty</label>
+                <select name="specialization_id" value={formData.specialization_id} onChange={handleChange}>
+                  <option value="">Select specialty</option>
+                  {specialties.map(spec => (
+                    <option key={spec.id} value={spec.id}>{spec.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>{editing ? 'Password (leave blank to keep unchanged)' : 'Password *'}</label>
+                <input type="password" name="password" value={formData.password} onChange={handleChange} required={!editing} />
+              </div>
+              <div className="form-group checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  />
+                  Active
+                </label>
+              </div>
+              <div className="modal-actions">
+                <button type="submit" className="save-btn">Save</button>
+                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

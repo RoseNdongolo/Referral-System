@@ -38,6 +38,7 @@ class DoctorListSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField()
     username = serializers.CharField()
     email = serializers.EmailField()
+    phone_number = serializers.CharField()   # ✅ added
     specialization_name = serializers.CharField(source='doctor_profile.specialization.name', default='')
     department_name = serializers.CharField(source='doctor_profile.department.name', default='')
     specialization_id = serializers.IntegerField(source='doctor_profile.specialization.id', allow_null=True)
@@ -48,7 +49,7 @@ class DoctorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
+            'id', 'username', 'email', 'first_name', 'last_name', 'phone_number',   # ✅ phone_number added
             'specialization_name', 'department_name', 'specialization_id', 'department_id',
             'is_active', 'is_available'
         ]
@@ -105,6 +106,7 @@ class DoctorRegistrationSerializer(serializers.Serializer):
             'email': instance.user.email,
             'first_name': instance.user.first_name,
             'last_name': instance.user.last_name,
+            'phone_number': instance.user.phone_number or '',   # ✅ added
             'specialization_name': instance.specialization.name if instance.specialization else '',
             'specialization_id': instance.specialization.id if instance.specialization else None,
             'department_name': instance.department.name if instance.department else '',
