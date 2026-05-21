@@ -1,4 +1,4 @@
-from django.contrib.gis.db import models as gis_models
+# hospitals/models.py
 from django.db import models
 
 class Specialty(models.Model):
@@ -15,7 +15,11 @@ class Hospital(models.Model):
     address = models.TextField()
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
-    location = gis_models.PointField(null=True, blank=True, help_text="Use (longitude, latitude) in SRID 4326")
+
+    # Replaced PointField with two decimal fields
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     has_emergency = models.BooleanField(default=False)
     has_surgery = models.BooleanField(default=False)
     has_icu = models.BooleanField(default=False)
@@ -27,14 +31,12 @@ class Hospital(models.Model):
         return self.name
 
     @property
-    def latitude(self):
-        return self.location.y if self.location else None
+    def location(self):
+        """Compatibility property for code expecting a PointField."""
+        if self.latitude is not None and self.longitude is not None:
+            return {"type": "Point", "coordinates": [float(self.longitude), float(self.latitude)]}
+        return None
 
-    @property
-    def longitude(self):
-        return self.location.x if self.location else None
-
-# You can deprecate HospitalSpecialty later; keep only if you have existing data to preserve.
 class HospitalDepartment(models.Model):
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='departments')
     name = models.CharField(max_length=100)

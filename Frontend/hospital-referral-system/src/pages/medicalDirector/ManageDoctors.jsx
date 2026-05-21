@@ -24,7 +24,7 @@ export default function ManageDoctors() {
   });
   const [modalError, setModalError] = useState('');
   const [modalSuccess, setModalSuccess] = useState('');
-  const [modalKey, setModalKey] = useState(Date.now()); // force remount on open
+  const [modalKey, setModalKey] = useState(Date.now());
 
   useEffect(() => {
     loadDoctors();
@@ -43,6 +43,9 @@ export default function ManageDoctors() {
           first_name: doc.first_name ?? '',
           last_name: doc.last_name ?? '',
           phone_number: doc.phone_number ?? '',
+          is_available: doc.is_available ?? true,
+          specialization_name: doc.specialization_name || '-',
+          department_name: doc.department_name || '-',
         }));
         setDoctors(doctorsList);
       })
@@ -85,7 +88,7 @@ export default function ManageDoctors() {
     setEditingDoctor(doctor);
     setModalError('');
     setModalSuccess('');
-    setModalKey(Date.now()); // force re-mount
+    setModalKey(Date.now());
     if (doctor) {
       setFormData({
         username: doctor.username ?? '',
@@ -191,15 +194,14 @@ export default function ManageDoctors() {
               <th>Email</th>
               <th>Specialty</th>
               <th>Department</th>
+              <th>Phone</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {doctors.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="empty-state">No doctors found.</td>
-              </tr>
+              <tr><td colSpan="7" className="empty-state">No doctors found.</td></tr>
             ) : (
               doctors.map(doc => (
                 <tr key={doc.id}>
@@ -207,12 +209,13 @@ export default function ManageDoctors() {
                   <td>{doc.email}</td>
                   <td>{doc.specialization_name || '-'}</td>
                   <td>{doc.department_name || '-'}</td>
+                  <td>{doc.phone_number || '-'}</td>
                   <td>
                     <span className={`status-badge ${doc.is_available ? 'status-active' : 'status-inactive'}`}>
                       {doc.is_available ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td>
+                  <td className="action-buttons">
                     <button onClick={() => openModal(doc)} className="edit-btn">Edit</button>
                     <button onClick={() => handleDelete(doc.id)} className="delete-btn">Delete</button>
                     <button onClick={() => toggleActive(doc.id)} className="toggle-btn">

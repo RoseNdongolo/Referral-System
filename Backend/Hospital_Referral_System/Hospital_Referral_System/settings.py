@@ -174,3 +174,27 @@ AUTHENTICATION_BACKENDS = [
 
 
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+
+
+
+
+
+
+# ========== PRODUCTION SETTINGS (for Render) ==========
+import dj_database_url
+
+# Allow Render's host and any custom hosts
+ALLOWED_HOSTS += ['.onrender.com', 'localhost', '127.0.0.1']
+
+# Override SECRET_KEY and DEBUG from environment variables
+SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
+DEBUG = os.getenv('DEBUG', 'False') == 'True'   # set DEBUG=False in production
+
+# Use Render's PostgreSQL (no PostGIS required)
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    # Ensure the engine is standard PostgreSQL (not postgis)
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+
+# Static files collection (for admin)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

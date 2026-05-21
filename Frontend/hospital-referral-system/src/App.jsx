@@ -38,7 +38,6 @@ import ManagePatients from "./pages/medicalDirector/ManagePatients.jsx";
 import ManageHospitals from "./pages/medicalDirector/ManageHospitals.jsx";
 import ManageReceptionists from "./pages/medicalDirector/ManageReceptionists.jsx";
 import ManageSpecialties from "./pages/medicalDirector/ManageSpecialties.jsx";
-import ManageSpecialists from "./pages/medicalDirector/ManageSpecialists.jsx";
 import ManageReferrals from "./pages/medicalDirector/ManageReferrals.jsx";      // list page with full CRUD
 import ManageReferralDetail from "./pages/medicalDirector/ManageReferralDetail.jsx"; // detail page
 
@@ -112,7 +111,6 @@ function App() {
             <Route path="/medical-director/hospitals" element={<ManageHospitals />} />
             <Route path="/medical-director/receptionists" element={<ManageReceptionists />} />
             <Route path="/medical-director/specialties" element={<ManageSpecialties />} />
-            <Route path="/medical-director/specialists" element={<ManageSpecialists />} />
           </Route>
 
           {/* ====================== PATIENT ROUTES ====================== */}

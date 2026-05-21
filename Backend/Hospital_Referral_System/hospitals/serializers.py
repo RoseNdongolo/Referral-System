@@ -14,7 +14,7 @@ class HospitalSerializer(serializers.ModelSerializer):
         write_only=True,
         queryset=Specialty.objects.all(),
         source='specialties',
-        required=False          # <-- make it optional
+        required=False
     )
     location = serializers.SerializerMethodField()
 
@@ -23,12 +23,9 @@ class HospitalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_location(self, obj):
-        if obj.location:
-            return {
-                "type": "Point",
-                "coordinates": [obj.location.x, obj.location.y]
-            }
-        return None
+        # The model's location property returns a dict with "type" and "coordinates"
+        # or None if coordinates are missing.
+        return obj.location
 
 class HospitalDepartmentSerializer(serializers.ModelSerializer):
     hospital_name = serializers.CharField(source='hospital.name', read_only=True)
