@@ -1,7 +1,9 @@
 services:
+  # Backend service
   - type: web
     name: hospital-referral-backend
-    rootDir: Backend/Hospital_Referral_System   # <-- exact path
+    rootDir: Backend/Hospital_Referral_System
+    plan: free
     env: python
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: gunicorn Hospital_Referral_System.wsgi:application
@@ -19,9 +21,11 @@ services:
       - key: GOOGLE_MAPS_API_KEY
         sync: false
 
+  # Frontend service
   - type: web
     name: hospital-referral-frontend
     rootDir: Frontend
+    plan: free
     env: node
     buildCommand: npm install && npm run build
     startCommand: npx serve -s build
@@ -29,18 +33,3 @@ services:
 databases:
   - name: hospital-db
     plan: free
-    
-
-services:
-  - type: web
-    name: hospital-referral-backend
-    rootDir: Backend
-    plan: free              # <-- ADD THIS LINE
-    env: python
-    # ... rest of your configuration
-  - type: web
-    name: hospital-referral-frontend
-    rootDir: Frontend
-    plan: free              # <-- ADD THIS LINE
-    env: node
-    # ... rest of your configuration
