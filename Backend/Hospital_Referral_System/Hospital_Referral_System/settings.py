@@ -140,14 +140,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
-
 
 AUTH_USER_MODEL = 'accounts.User'
-
-GDAL_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgdal.so'
-
-GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so'
 
 
 REST_FRAMEWORK = {
@@ -180,22 +174,38 @@ GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 
 
 
-
 # ========== PRODUCTION SETTINGS (for Render) ==========
 import dj_database_url
 
-# Allow Render's host and any custom hosts
+# Allow Render's host and local development
 ALLOWED_HOSTS += ['.onrender.com', 'localhost', '127.0.0.1']
 
 # Override SECRET_KEY and DEBUG from environment variables
 SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
-DEBUG = os.getenv('DEBUG', 'False') == 'True'   # set DEBUG=False in production
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Use Render's PostgreSQL (no PostGIS required)
 if 'DATABASE_URL' in os.environ:
     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
-    # Ensure the engine is standard PostgreSQL (not postgis)
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 
-# Static files collection (for admin)
+# Static files for WhiteNoise
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Frontend URL for CORS & CSRF (set FRONTEND_URL in Render environment)
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
+
+# Keep localhost origins when DEBUG=True (development)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+    CSRF_TRUSTED_ORIGINS += [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
