@@ -1,12 +1,9 @@
 services:
-  # Backend Django service
   - type: web
     name: hospital-referral-backend
-    rootDir: Backend                          # Path to your Django code
+    rootDir: Backend/Hospital_Referral_System   # <-- exact path
     env: python
-    buildCommand: |
-      pip install -r requirements.txt
-      python manage.py collectstatic --noinput
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: gunicorn Hospital_Referral_System.wsgi:application
     envVars:
       - key: DATABASE_URL
@@ -17,21 +14,17 @@ services:
         generateValue: true
       - key: DEBUG
         value: false
-      - key: ALLOWED_HOSTS
-        value: .onrender.com
-      # Important: Set this to your frontend URL after it's deployed
       - key: FRONTEND_URL
-        value: https://your-frontend-url.onrender.com
+        value: https://hospital-referral-frontend.onrender.com
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
 
-  # Frontend service (adjust commands for your specific framework)
   - type: web
     name: hospital-referral-frontend
-    rootDir: Frontend                         # Path to your frontend code
+    rootDir: Frontend
     env: node
-    buildCommand: npm install && npm run build   # Or 'yarn', 'pnpm', etc.
-    startCommand: npx serve -s build          # For a simple static file server
-    # If your frontend runs on a different port, set it here.
-    # The 'serve' package usually uses port 3000 by default.
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s build
 
 databases:
   - name: hospital-db
