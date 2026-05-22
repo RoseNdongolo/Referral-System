@@ -29,3 +29,18 @@ services:
 databases:
   - name: hospital-db
     plan: free
+    
+
+services:
+  - type: web
+    name: hospital-referral-backend
+    rootDir: Backend
+    plan: free              # <-- ADD THIS LINE
+    env: python
+    # ... rest of your configuration
+  - type: web
+    name: hospital-referral-frontend
+    rootDir: Frontend
+    plan: free              # <-- ADD THIS LINE
+    env: node
+    # ... rest of your configuration
