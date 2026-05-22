@@ -21,14 +21,14 @@ services:
       - key: GOOGLE_MAPS_API_KEY
         sync: false
 
-  # Frontend service
+  # Frontend service - FIXED
   - type: web
     name: hospital-referral-frontend
-    rootDir: Frontend
+    rootDir: Frontend/hospital-referral-system   # <-- corrected path
     plan: free
     env: node
     buildCommand: npm install && npm run build
-    startCommand: npx serve -s build
+    startCommand: npx serve -s dist              # <-- serve from 'dist' folder
 
 databases:
   - name: hospital-db
