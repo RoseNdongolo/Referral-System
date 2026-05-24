@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 import logging
+import time   # <-- added for generating MRN
 
 from accounts.permissions import IsReceptionist, IsPatientOwner, IsDoctor, IsAdminOrMedicalDirector, IsReceptionistOrMedicalDirector
 from .models import PatientProfile, Consultation
@@ -102,7 +103,16 @@ class PatientProfileViewSet(ModelViewSet):
     # ==================== Patient self‑service ====================
     @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        profile = get_object_or_404(PatientProfile, user=request.user)
+        # ✅ Auto-create patient profile if it does not exist
+        profile, created = PatientProfile.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'medical_record_number': f"MRN-{request.user.id}-{int(time.time())}",
+                'phone_number': request.user.phone_number or '',
+            }
+        )
+        if created:
+            logger.info(f"Auto-created patient profile for {request.user.username}")
 
         if request.method == 'GET':
             serializer = self.get_serializer(profile)
@@ -112,6 +122,7 @@ class PatientProfileViewSet(ModelViewSet):
             request.user.delete()
             return Response(status=204)
 
+        # PUT / PATCH
         user = request.user
         user_fields = ['first_name', 'last_name', 'email', 'username']
         for field in user_fields:

@@ -1,3 +1,4 @@
+// src/pages/patient/MyReferrals.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import patientService from '../../services/patientService';
@@ -13,11 +14,15 @@ export default function MyReferrals() {
   const [selectedReferral, setSelectedReferral] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Load referrals initially and then every 30 seconds
   useEffect(() => {
     loadReferrals();
+    const interval = setInterval(loadReferrals, 30000); // auto‑refresh every 30 sec
+    return () => clearInterval(interval);
   }, []);
 
   const loadReferrals = () => {
+    setLoading(true);
     patientService.getMyReferrals()
       .then(res => {
         let data = [];
@@ -29,6 +34,7 @@ export default function MyReferrals() {
           console.warn('Unexpected referrals response:', res.data);
         }
         setReferrals(data);
+        setError('');
       })
       .catch(err => {
         console.error(err);
@@ -54,7 +60,13 @@ export default function MyReferrals() {
     });
 
   const openModal = (referral) => {
-    setSelectedReferral(referral);
+    // Refresh the specific referral details before showing modal
+    patientService.getReferralById(referral.id)
+      .then(res => setSelectedReferral(res.data))
+      .catch(err => {
+        console.error('Failed to fetch latest referral details', err);
+        setSelectedReferral(referral); // fallback to old data
+      });
     setShowModal(true);
   };
 
@@ -75,6 +87,7 @@ export default function MyReferrals() {
       <div className="referrals-header">
         <h1>My Referrals</h1>
         <p>View your referral history and navigate to the recommended hospital.</p>
+        <button onClick={loadReferrals} className="refresh-btn">🔄 Refresh List</button>
       </div>
 
       {/* Toolbar: Filter, Search, Sort */}

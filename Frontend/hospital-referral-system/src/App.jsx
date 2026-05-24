@@ -53,6 +53,7 @@ import PatientConsultationDetail from "./pages/patient/PatientConsultationDetail
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import AdminHospitals from "./pages/admin/AdminHospitals.jsx";
+import AdminDepartments from "./pages/admin/AdminDepartments.jsx";
 import AdminSpecialties from "./pages/admin/AdminSpecialties.jsx";
 import AdminSpecialists from "./pages/admin/AdminSpecialists.jsx";
 import AdminReferralsList from "./pages/admin/AdminReferralsList.jsx";
@@ -128,6 +129,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/hospitals" element={<AdminHospitals />} />
+            <Route path="/admin/departments" element={<AdminDepartments />} />
             <Route path="/admin/specialties" element={<AdminSpecialties />} />
             <Route path="/admin/specialists" element={<AdminSpecialists />} />
             <Route path="/admin/referrals" element={<AdminReferralsList />} />

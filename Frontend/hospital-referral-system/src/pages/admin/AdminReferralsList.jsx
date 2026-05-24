@@ -20,8 +20,21 @@ export default function AdminReferralsList() {
     try {
       const res = await adminService.getAllReferrals();
       setReferrals(res.data.results || res.data);
+      setError('');
     } catch (err) {
-      setError('Failed to load referrals');
+      console.error('Fetch error:', err);
+      // Check for 401 (Unauthorized)
+      if (err.response?.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          navigate('/login');
+        }, 2000);
+      } else {
+        setError('Failed to load referrals. Please refresh the page.');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,7 +76,7 @@ export default function AdminReferralsList() {
   };
 
   const handleViewDetail = (id) => {
-    navigate(`/admin/referrals/${id}`);   // ← navigate to admin detail route
+    navigate(`/admin/referrals/${id}`);
   };
 
   if (loading) return <div className="loading-state">Loading referrals...</div>;
@@ -72,6 +85,7 @@ export default function AdminReferralsList() {
   return (
     <div className="admin-referrals-container">
       <h1>All Referrals (Admin)</h1>
+      <button onClick={fetchReferrals} className="refresh-btn">🔄 Refresh</button>
       <div className="referrals-table-wrapper">
         <table className="referrals-table">
           <thead>

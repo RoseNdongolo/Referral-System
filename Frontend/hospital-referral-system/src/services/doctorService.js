@@ -10,9 +10,9 @@ const doctorService = {
 
   // Consultations
   getMyConsultations: () => api.get('/doctors/my_consultations/'),
-  getConsultationDetail: (id) => api.get(`/doctors/consultations/${id}/`),   // ✅ changed
+  getConsultationDetail: (id) => api.get(`/doctors/consultations/${id}/`),
   updateConsultationStatus: (consultationId, status, extra = {}) => 
-    api.patch(`/doctors/consultations/${consultationId}/update_status/`, { status, ...extra }), // optional – you can keep as is or change
+    api.patch(`/doctors/consultations/${consultationId}/update_status/`, { status, ...extra }),
 
   // Referrals
   getAllReferrals: () => api.get('/referrals/referrals/'),
@@ -21,8 +21,10 @@ const doctorService = {
   updateReferral: (id, data) => api.patch(`/referrals/referrals/${id}/`, data),
   deleteReferral: (id) => api.delete(`/referrals/referrals/${id}/`),
 
-  // Specialties
+  // Specialties & Hospitals
   getAllSpecialties: () => api.get('/hospitals/specialties/'),
+  getHospitalsBySpecialty: (specialtyName) => 
+    api.get(`/hospitals/hospitals/by_specialty/?specialty=${encodeURIComponent(specialtyName)}`),
 };
 
 export default doctorService;

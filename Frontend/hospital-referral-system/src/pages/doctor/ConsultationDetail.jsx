@@ -17,8 +17,11 @@ export default function ConsultationDetail() {
   const [error, setError] = useState('');
   const [showReferralForm, setShowReferralForm] = useState(false);
   const [specialties, setSpecialties] = useState([]);
+  const [hospitals, setHospitals] = useState([]);        // <-- new
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
   const [referralData, setReferralData] = useState({
     required_specialty: '',
+    hospital_id: '',           // <-- new
     referral_reason: '',
     diagnosis: '',
     clinical_notes: '',
@@ -41,10 +44,23 @@ export default function ConsultationDetail() {
     }
   }, [consultation]);
 
+  // Fetch hospitals when required_specialty changes
+  useEffect(() => {
+    if (referralData.required_specialty) {
+      setLoadingHospitals(true);
+      doctorService.getHospitalsBySpecialty(referralData.required_specialty)
+        .then(res => setHospitals(res.data))
+        .catch(() => setHospitals([]))
+        .finally(() => setLoadingHospitals(false));
+    } else {
+      setHospitals([]);
+    }
+  }, [referralData.required_specialty]);
+
   const fetchConsultation = async () => {
     try {
       const res = await doctorService.getConsultationDetail(id);
-      console.log('Consultation API response:', res.data); // ✅ debug
+      console.log('Consultation API response:', res.data);
       setConsultation(res.data);
       setStatus(res.data.status);
       setDiagnosis(res.data.diagnosis || '');
@@ -100,14 +116,15 @@ export default function ConsultationDetail() {
 
   const handleCreateReferral = async (e) => {
     e.preventDefault();
-    if (!referralData.required_specialty || !referralData.referral_reason) {
-      setError('Please fill required fields');
+    if (!referralData.required_specialty || !referralData.referral_reason || !referralData.hospital_id) {
+      setError('Please fill all required fields (specialty, reason, and destination hospital)');
       return;
     }
     try {
       await doctorService.createReferral({
         consultation: consultation.id,
         required_specialty: referralData.required_specialty,
+        hospital_id: referralData.hospital_id,        // <-- send chosen hospital
         referral_reason: referralData.referral_reason,
         diagnosis: referralData.diagnosis,
         clinical_notes: referralData.clinical_notes,
@@ -165,6 +182,23 @@ export default function ConsultationDetail() {
                 {specialties.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
             </div>
+
+            <div className="form-group">
+              <label>Destination Hospital *</label>
+              <select name="hospital_id" value={referralData.hospital_id} onChange={handleReferralChange} required disabled={loadingHospitals}>
+                <option value="">-- Select a hospital --</option>
+                {hospitals.map(h => (
+                  <option key={h.id} value={h.id}>
+                    {h.name} {h.address ? `- ${h.address.substring(0, 40)}` : ''}
+                  </option>
+                ))}
+              </select>
+              {loadingHospitals && <small>Loading hospitals...</small>}
+              {!loadingHospitals && referralData.required_specialty && hospitals.length === 0 && (
+                <small style={{color: 'orange'}}>No hospital has this specialty. Choose another specialty.</small>
+              )}
+            </div>
+
             <div className="form-group">
               <label>Referral Reason *</label>
               <textarea name="referral_reason" value={referralData.referral_reason} onChange={handleReferralChange} required />

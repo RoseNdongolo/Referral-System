@@ -54,6 +54,7 @@ class ReferralViewSet(ModelViewSet):
     def perform_create(self, serializer):
         required_specialty = self.request.data.get('required_specialty')
         consultation_id = self.request.data.get('consultation')
+        hospital_id = self.request.data.get('hospital_id')          # <-- new: doctor's choice
         patient = None
 
         if consultation_id:
@@ -71,12 +72,22 @@ class ReferralViewSet(ModelViewSet):
         lng = patient_profile.longitude
 
         hospital = None
-        if lat and lng and required_specialty:
+
+        # 1️⃣ Use explicitly chosen hospital if provided
+        if hospital_id:
+            hospital = get_object_or_404(Hospital, id=hospital_id, is_active=True)
+
+        # 2️⃣ Fallback: nearest matching hospital based on patient location + specialty
+        if hospital is None and lat is not None and lng is not None and required_specialty:
             patient_point = Point(float(lng), float(lat), srid=4326)
             hospital = get_nearest_matching_hospital(required_specialty, patient_point)
 
+        # 3️⃣ Last resort: any active hospital
         if hospital is None:
             hospital = Hospital.objects.filter(is_active=True).first()
+
+        if not hospital:
+            raise ValidationError("No suitable hospital found for this referral.")
 
         referral = serializer.save(
             doctor=self.request.user,
@@ -85,15 +96,20 @@ class ReferralViewSet(ModelViewSet):
             patient=patient
         )
 
-        if lat and lng and hospital and hospital.location:
-            distance_km, travel_min, _, _ = fetch_google_maps_data(
-                lat, lng,
-                hospital.location.y, hospital.location.x
-            )
-            if distance_km is not None:
-                referral.distance_km = distance_km
-                referral.estimated_travel_time_minutes = travel_min
-                referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
+        # Compute distance & travel time (if patient location and hospital location exist)
+        if lat and lng and hospital.location:
+            try:
+                distance_km, travel_min, _, _ = fetch_google_maps_data(
+                    lat, lng,
+                    hospital.location.y, hospital.location.x
+                )
+                if distance_km is not None:
+                    referral.distance_km = distance_km
+                    referral.estimated_travel_time_minutes = travel_min
+                    referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
+            except Exception:
+                # Silently ignore map API errors – distance/travel time remain None
+                pass
 
     def perform_update(self, serializer):
         # Full CRUD – no status restriction

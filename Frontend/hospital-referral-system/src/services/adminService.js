@@ -22,6 +22,13 @@ const adminService = {
   updateHospital: (id, data) => api.patch(`/admin/hospitals/${id}/`, data),
   deleteHospital: (id) => api.delete(`/admin/hospitals/${id}/`),
 
+  // ========== Department Management (admin only) ==========
+  getAllDepartments: () => api.get('/admin/departments/'),
+  getDepartmentById: (id) => api.get(`/admin/departments/${id}/`),
+  createDepartment: (data) => api.post('/admin/departments/', data),
+  updateDepartment: (id, data) => api.patch(`/admin/departments/${id}/`, data),
+  deleteDepartment: (id) => api.delete(`/admin/departments/${id}/`),
+
   // ========== Specialty Management (admin only) ==========
   getAllSpecialties: () => api.get('/admin/specialties/'),
   getSpecialtyById: (id) => api.get(`/admin/specialties/${id}/`),

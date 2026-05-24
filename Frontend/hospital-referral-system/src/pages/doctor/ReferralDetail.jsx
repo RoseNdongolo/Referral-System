@@ -14,22 +14,52 @@ export default function ReferralDetail() {
   const [editData, setEditData] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [specialties, setSpecialties] = useState([]);        // all specialties
+  const [hospitals, setHospitals] = useState([]);            // hospitals filtered by specialty
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
 
   useEffect(() => {
     fetchReferral();
+    fetchSpecialties();
   }, [id]);
+
+  const fetchSpecialties = async () => {
+    try {
+      const res = await doctorService.getAllSpecialties();
+      setSpecialties(res.data);
+    } catch (err) {
+      console.error('Failed to load specialties');
+    }
+  };
+
+  // When specialty changes in edit mode, fetch hospitals for that specialty
+  useEffect(() => {
+    if (isEditing && editData.required_specialty) {
+      setLoadingHospitals(true);
+      doctorService.getHospitalsBySpecialty(editData.required_specialty)
+        .then(res => setHospitals(res.data))
+        .catch(() => setHospitals([]))
+        .finally(() => setLoadingHospitals(false));
+    } else {
+      setHospitals([]);
+    }
+  }, [editData.required_specialty, isEditing]);
 
   const fetchReferral = async () => {
     try {
       const res = await doctorService.getReferralById(id);
       setReferral(res.data);
       setEditData({
+        required_specialty: res.data.required_specialty || '',
+        hospital_id: res.data.hospital?.id || res.data.hospital,
         referral_reason: res.data.referral_reason || '',
         diagnosis: res.data.diagnosis || '',
         clinical_notes: res.data.clinical_notes || '',
         test_results: res.data.test_results || '',
+        status: res.data.status,
       });
     } catch (err) {
+      console.error(err);
       setError('Failed to load referral details');
     } finally {
       setLoading(false);
@@ -40,10 +70,20 @@ export default function ReferralDetail() {
     setEditData({ ...editData, [e.target.name]: e.target.value });
   };
 
+  // ✅ FIXED: after saving, refetch the referral to get updated hospital details
   const handleSaveEdit = async () => {
+    const updatePayload = {
+      required_specialty: editData.required_specialty,
+      hospital: editData.hospital_id,
+      referral_reason: editData.referral_reason,
+      diagnosis: editData.diagnosis,
+      clinical_notes: editData.clinical_notes,
+      test_results: editData.test_results,
+    };
     try {
-      await doctorService.updateReferral(id, editData); // PATCH
-      setReferral({ ...referral, ...editData });
+      await doctorService.updateReferral(id, updatePayload);
+      // Refetch the entire referral from the server
+      await fetchReferral();
       setIsEditing(false);
       setStatusMessage('Referral updated successfully');
       setTimeout(() => setStatusMessage(''), 3000);
@@ -57,7 +97,8 @@ export default function ReferralDetail() {
     setUpdatingStatus(true);
     try {
       await doctorService.updateReferral(id, { status: newStatus });
-      setReferral({ ...referral, status: newStatus });
+      // Refetch to ensure status is consistent
+      await fetchReferral();
       setStatusMessage(`Status updated to ${newStatus}`);
       setTimeout(() => setStatusMessage(''), 3000);
     } catch (err) {
@@ -81,8 +122,6 @@ export default function ReferralDetail() {
   if (loading) return <div className="loading-state">Loading referral details...</div>;
   if (error) return <div className="error-message">{error}</div>;
   if (!referral) return <div className="error-message">Referral not found</div>;
-
-  const canEdit = true; // backend enforces ownership
 
   return (
     <div className="referral-detail-container">
@@ -116,6 +155,30 @@ export default function ReferralDetail() {
           // Edit mode
           <div className="edit-form">
             <div className="form-group">
+              <label>Required Specialty *</label>
+              <select name="required_specialty" value={editData.required_specialty} onChange={handleEditChange} required>
+                <option value="">-- Select specialty --</option>
+                {specialties.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Destination Hospital *</label>
+              <select name="hospital_id" value={editData.hospital_id} onChange={handleEditChange} required disabled={loadingHospitals}>
+                <option value="">-- Select a hospital --</option>
+                {hospitals.map(h => (
+                  <option key={h.id} value={h.id}>
+                    {h.name} {h.address ? `- ${h.address.substring(0, 40)}` : ''}
+                  </option>
+                ))}
+              </select>
+              {loadingHospitals && <small>Loading hospitals...</small>}
+              {!loadingHospitals && editData.required_specialty && hospitals.length === 0 && (
+                <small style={{color: 'orange'}}>No hospital has this specialty. Choose another specialty.</small>
+              )}
+            </div>
+
+            <div className="form-group">
               <label>Referral Reason *</label>
               <textarea name="referral_reason" value={editData.referral_reason || ''} onChange={handleEditChange} required />
             </div>
@@ -132,14 +195,14 @@ export default function ReferralDetail() {
               <textarea name="test_results" value={editData.test_results || ''} onChange={handleEditChange} />
             </div>
             <div className="form-actions">
-              <button onClick={handleSaveEdit} className="save-btn">Save</button>
+              <button onClick={handleSaveEdit} className="save-btn">Save Changes</button>
               <button onClick={() => setIsEditing(false)} className="cancel-btn">Cancel</button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Status change dropdown */}
+      {/* Status change dropdown (always visible) */}
       <div className="status-change-section">
         <h3>Update Status</h3>
         <select onChange={(e) => handleStatusChange(e.target.value)} value={referral.status} disabled={updatingStatus}>

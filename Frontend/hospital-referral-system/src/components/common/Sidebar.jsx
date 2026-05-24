@@ -61,6 +61,7 @@ const receptionistLinks = [
     { to: "/admin/users", label: "Manage Users" },
     { to: "/admin/hospitals", label: "Hospitals" },
     { to: "/admin/specialists", label: "Specialists" },
+    { to: "/admin/departments", label: "Departments" },
     { to: "/admin/referrals", label: "All Referrals" },
     { to: "/admin/specialties", label: "Specialties" },
     { to: "/admin/profile", label: "Profile" },

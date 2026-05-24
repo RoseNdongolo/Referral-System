@@ -11,48 +11,47 @@ class IsSuperUser(BasePermission):
 class IsReceptionist(BasePermission):
     """Receptionists (active profile) or superusers."""
     def has_permission(self, request, view):
-        return (
-            request.user and request.user.is_authenticated and
-            (request.user.is_superuser or (
-                request.user.role == "receptionist" and
-                hasattr(request.user, 'receptionist_profile') and
-                request.user.receptionist_profile.is_active
-            ))
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        # Allow if user has a receptionist profile (regardless of role, for robustness)
+        if hasattr(request.user, 'receptionist_profile'):
+            return request.user.receptionist_profile.is_active
+        return request.user.role == "receptionist"
 
 
 class IsDoctor(BasePermission):
     """Doctors (profile exists) or superusers."""
     def has_permission(self, request, view):
-        return (
-            request.user and request.user.is_authenticated and
-            (request.user.is_superuser or (
-                request.user.role == "doctor" and
-                hasattr(request.user, 'doctor_profile')
-            ))
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        # ✅ Allow any user with a doctor_profile (even if role is not yet 'doctor')
+        if hasattr(request.user, 'doctor_profile'):
+            return True
+        return request.user.role == "doctor"
 
 
 class IsMedicalDirector(BasePermission):
     """Medical Directors (active profile) or superusers."""
     def has_permission(self, request, view):
-        return (
-            request.user and request.user.is_authenticated and
-            (request.user.is_superuser or (
-                request.user.role == "medical_director" and
-                hasattr(request.user, 'medical_director_profile') and
-                request.user.medical_director_profile.is_active
-            ))
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        if hasattr(request.user, 'medical_director_profile'):
+            return request.user.medical_director_profile.is_active
+        return request.user.role == "medical_director"
 
 
 class IsAdmin(BasePermission):
     """Admin role or superuser."""
     def has_permission(self, request, view):
-        return (
-            request.user and request.user.is_authenticated and
-            (request.user.is_superuser or request.user.role == "admin")
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_superuser or request.user.role == "admin"
 
 
 class IsPatientOwner(BasePermission):
