@@ -85,7 +85,7 @@ export default function NewReferral() {
       await doctorService.createReferral({
         consultation: consultation.id,
         required_specialty: formData.required_specialty,
-        hospital_id: formData.hospital_id,
+        hospital: parseInt(formData.hospital_id),
         referral_reason: formData.referral_reason,
         diagnosis: formData.diagnosis,
         clinical_notes: formData.clinical_notes,

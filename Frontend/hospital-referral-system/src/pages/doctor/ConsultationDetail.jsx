@@ -124,7 +124,7 @@ export default function ConsultationDetail() {
       await doctorService.createReferral({
         consultation: consultation.id,
         required_specialty: referralData.required_specialty,
-        hospital_id: referralData.hospital_id,        // <-- send chosen hospital
+        hospital: referralData.hospital_id,        // <-- send chosen hospital
         referral_reason: referralData.referral_reason,
         diagnosis: referralData.diagnosis,
         clinical_notes: referralData.clinical_notes,
