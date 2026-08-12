@@ -1,6 +1,7 @@
 // src/pages/doctor/DoctorDashboard.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaUsers, FaExchangeAlt, FaClipboardList, FaUserMd } from 'react-icons/fa';
 import doctorService from '../../services/doctorService';
 import './DoctorDashboard.css';
 
@@ -25,7 +26,8 @@ export default function DoctorDashboard() {
         const referrals = refRes.data.results || refRes.data;
         setStats({ active: activeCount, totalReferrals: referrals.length });
       } catch (err) {
-        console.error(err);
+        // Silent fail in production – error can be sent to a logging service
+        // For development, you can log: if (process.env.NODE_ENV === 'development') console.error(err);
       } finally {
         setLoading(false);
       }
@@ -55,17 +57,17 @@ export default function DoctorDashboard() {
 
       <div className="quick-actions">
         <Link to="/doctor/patients" className="action-card">
-          <div className="action-icon">👥</div>
+          <div className="action-icon"><FaUsers /></div>
           <h3>My Patients</h3>
           <p>View assigned patients</p>
         </Link>
         <Link to="/doctor/referral" className="action-card">
-          <div className="action-icon">🔄</div>
+          <div className="action-icon"><FaExchangeAlt /></div>
           <h3>New Referral</h3>
           <p>Refer a patient to a specialist</p>
         </Link>
         <Link to="/doctor/referral-history" className="action-card">
-          <div className="action-icon">📋</div>
+          <div className="action-icon"><FaClipboardList /></div>
           <h3>Referral History</h3>
           <p>View past referrals</p>
         </Link>

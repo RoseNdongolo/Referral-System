@@ -1,10 +1,10 @@
-// src/pages/admin/AdminSpecialists.jsx
+// src/pages/admin/AdminDoctors.jsx
 import { useEffect, useState } from 'react';
 import adminService from '../../services/adminService';
-import './AdminSpecialists.css';
+import './AdminDoctors.css';
 
-export default function AdminSpecialists() {
-  const [specialists, setSpecialists] = useState([]);
+export default function AdminDoctors() {
+  const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -21,20 +21,20 @@ export default function AdminSpecialists() {
   const [specialties, setSpecialties] = useState([]);
 
   useEffect(() => {
-    fetchSpecialists();
+    fetchDoctors();
     fetchSpecialties();
   }, []);
 
-  const fetchSpecialists = async () => {
+  const fetchDoctors = async () => {
     try {
       const res = await adminService.getAllSpecialists();
-      let doctors = [];
+      let doctorsData = [];
       if (res.data && Array.isArray(res.data)) {
-        doctors = res.data;
+        doctorsData = res.data;
       } else if (res.data && res.data.results && Array.isArray(res.data.results)) {
-        doctors = res.data.results;
+        doctorsData = res.data.results;
       }
-      const normalized = doctors.map(doc => ({
+      const normalized = doctorsData.map(doc => ({
         ...doc,
         id: doc.id,
         specialization_name: doc.specialization_name,
@@ -42,9 +42,9 @@ export default function AdminSpecialists() {
         first_name: doc.first_name || '',
         last_name: doc.last_name || '',
       }));
-      setSpecialists(normalized);
+      setDoctors(normalized);
     } catch (err) {
-      setError('Failed to load specialists');
+      setError('Failed to load doctors');
     } finally {
       setLoading(false);
     }
@@ -111,9 +111,9 @@ export default function AdminSpecialists() {
         await adminService.createSpecialist(payload);
       }
       setShowModal(false);
-      fetchSpecialists();
+      fetchDoctors();
     } catch (err) {
-      setError('Failed to save specialist');
+      setError('Failed to save doctor');
     }
   };
 
@@ -121,27 +121,27 @@ export default function AdminSpecialists() {
     if (!window.confirm('Delete this doctor permanently?')) return;
     try {
       await adminService.deleteSpecialist(id);
-      fetchSpecialists();
+      fetchDoctors();
     } catch (err) {
-      setError('Failed to delete specialist');
+      setError('Failed to delete doctor');
     }
   };
 
   const handleToggleActive = async (doctor) => {
     try {
       await adminService.updateSpecialist(doctor.id, { is_active: !doctor.is_active });
-      fetchSpecialists();
+      fetchDoctors();
     } catch (err) {
       setError('Failed to update status');
     }
   };
 
-  if (loading) return <div>Loading specialists...</div>;
+  if (loading) return <div>Loading doctors...</div>;
 
   return (
     <div className="admin-specialists-container">
       <div className="admin-header">
-        <h1>Manage Specialists (Doctors)</h1>
+        <h1>Manage Doctors</h1>
         <button onClick={() => handleOpenModal()} className="btn-primary">+ Add Doctor</button>
       </div>
       {error && <div className="error-message">{error}</div>}
@@ -157,7 +157,7 @@ export default function AdminSpecialists() {
             </tr>
           </thead>
           <tbody>
-            {specialists.map(doc => (
+            {doctors.map(doc => (
               <tr key={doc.id}>
                 <td>{doc.first_name} {doc.last_name} ({doc.username})</td>
                 <td>{doc.email}</td>

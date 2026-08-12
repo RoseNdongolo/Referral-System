@@ -1,6 +1,7 @@
 // src/pages/receptionist/ReceptionistDashboard.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaUser, FaClipboardList, FaUsers, FaThumbtack, FaExchangeAlt, FaPlus, FaStethoscope } from 'react-icons/fa';
 import receptionistService from '../../services/receptionistService';
 import './ReceptionistDashboard.css';
 
@@ -33,7 +34,7 @@ export default function ReceptionistDashboard() {
         setRecentPatients(recent);
         setRecentReferrals(referrals.slice(-5).reverse());
       } catch (err) {
-        console.error(err);
+        // Silent fail in production – error can be sent to a logging service
       } finally {
         setLoading(false);
       }
@@ -63,32 +64,32 @@ export default function ReceptionistDashboard() {
 
       <div className="quick-actions">
         <Link to="/receptionist/register-patient" className="action-card">
-          <div className="action-icon">➕</div>
+          <div className="action-icon"><FaPlus /></div>
           <h3>Register Patient</h3>
           <p>Add a new patient to the system</p>
         </Link>
         <Link to="/receptionist/patients" className="action-card">
-          <div className="action-icon">📋</div>
+          <div className="action-icon"><FaClipboardList /></div>
           <h3>All Patients</h3>
           <p>View and manage patient records</p>
         </Link>
         <Link to="/receptionist/assign-patient" className="action-card">
-          <div className="action-icon">👥</div>
+          <div className="action-icon"><FaUsers /></div>
           <h3>Assign Patient</h3>
           <p>Assign patient to a doctor</p>
         </Link>
         <Link to="/receptionist/assigned-patients" className="action-card">
-          <div className="action-icon">📌</div>
+          <div className="action-icon"><FaThumbtack /></div>
           <h3>Assigned Patients</h3>
           <p>View patients assigned to doctors</p>
         </Link>
         <Link to="/receptionist/referrals" className="action-card">
-          <div className="action-icon">🔄</div>
+          <div className="action-icon"><FaExchangeAlt /></div>
           <h3>Referrals</h3>
           <p>View all referral requests</p>
         </Link>
         <Link to="/receptionist/profile" className="action-card">
-          <div className="action-icon">👤</div>
+          <div className="action-icon"><FaUser /></div>
           <h3>My Profile</h3>
           <p>Update your personal information</p>
         </Link>

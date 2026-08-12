@@ -3,13 +3,12 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.contrib.gis.geos import Point
 
 from accounts.permissions import IsDoctor, IsMedicalDirectorOrAdminOrDoctorOwner
 from hospitals.models import Hospital
 from .models import Referral, ReferralAttachment
 from .serializers import ReferralSerializer, ReferralAttachmentSerializer
-from .services import get_nearest_matching_hospital, fetch_google_maps_data
+from .services import get_nearest_matching_hospital, get_distance_and_time   # <-- changed
 
 
 class ReferralViewSet(ModelViewSet):
@@ -22,10 +21,8 @@ class ReferralViewSet(ModelViewSet):
         elif self.action == 'retrieve':
             return [IsAuthenticated()]
         elif self.action == 'create':
-            # Only doctors (or superusers) can create referrals
             return [IsAuthenticated(), IsDoctor()]
         elif self.action in ['update', 'partial_update', 'destroy']:
-            # Medical Directors/Admins OR the doctor who owns the referral
             return [IsAuthenticated(), IsMedicalDirectorOrAdminOrDoctorOwner()]
         return [IsAuthenticated()]
 
@@ -34,27 +31,22 @@ class ReferralViewSet(ModelViewSet):
         if user.role == 'patient':
             return self.queryset.filter(patient=user)
         elif user.role == 'doctor':
-            return self.queryset.filter(doctor=user)   # doctors see only their own referrals
-        # admin, medical_director, receptionist see all
+            return self.queryset.filter(doctor=user)
         return self.queryset
 
     def get_object(self):
         obj = super().get_object()
         user = self.request.user
-
-        # For retrieve, allow doctor (creator), patient (owner), or staff/admin/medical director
         if self.action == 'retrieve':
             if obj.doctor == user or obj.patient == user or user.is_staff or user.role in ['admin', 'medical_director']:
                 return obj
             raise PermissionDenied("You do not have permission to view this referral.")
-
-        # For update/delete, the permission class will handle object-level checks
         return obj
 
     def perform_create(self, serializer):
         required_specialty = self.request.data.get('required_specialty')
         consultation_id = self.request.data.get('consultation')
-        hospital_id = self.request.data.get('hospital_id')          # <-- new: doctor's choice
+        hospital_id = self.request.data.get('hospital_id')          # doctor's chosen hospital
         patient = None
 
         if consultation_id:
@@ -68,19 +60,18 @@ class ReferralViewSet(ModelViewSet):
             raise ValidationError("Patient information is required to create a referral.")
 
         patient_profile = patient.patient_profile
-        lat = patient_profile.latitude
-        lng = patient_profile.longitude
+        patient_lat = float(patient_profile.latitude) if patient_profile.latitude else None
+        patient_lng = float(patient_profile.longitude) if patient_profile.longitude else None
 
         hospital = None
 
-        # 1️⃣ Use explicitly chosen hospital if provided
+        # 1️⃣ Use explicitly chosen hospital
         if hospital_id:
             hospital = get_object_or_404(Hospital, id=hospital_id, is_active=True)
 
-        # 2️⃣ Fallback: nearest matching hospital based on patient location + specialty
-        if hospital is None and lat is not None and lng is not None and required_specialty:
-            patient_point = Point(float(lng), float(lat), srid=4326)
-            hospital = get_nearest_matching_hospital(required_specialty, patient_point)
+        # 2️⃣ Fallback: nearest hospital by specialty (if patient has location)
+        if hospital is None and patient_lat is not None and patient_lng is not None and required_specialty:
+            hospital = get_nearest_matching_hospital(required_specialty, patient_lat, patient_lng)
 
         # 3️⃣ Last resort: any active hospital
         if hospital is None:
@@ -89,6 +80,7 @@ class ReferralViewSet(ModelViewSet):
         if not hospital:
             raise ValidationError("No suitable hospital found for this referral.")
 
+        # Create referral without distance/time first
         referral = serializer.save(
             doctor=self.request.user,
             hospital=hospital,
@@ -96,27 +88,20 @@ class ReferralViewSet(ModelViewSet):
             patient=patient
         )
 
-        # Compute distance & travel time (if patient location and hospital location exist)
-        if lat and lng and hospital.location:
-            try:
-                distance_km, travel_min, _, _ = fetch_google_maps_data(
-                    lat, lng,
-                    hospital.location.y, hospital.location.x
-                )
-                if distance_km is not None:
-                    referral.distance_km = distance_km
-                    referral.estimated_travel_time_minutes = travel_min
-                    referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
-            except Exception:
-                # Silently ignore map API errors – distance/travel time remain None
-                pass
+        # Compute distance & travel time using OSRM (or Haversine fallback)
+        if patient_lat is not None and patient_lng is not None and hospital.latitude and hospital.longitude:
+            dist_km, dur_min = get_distance_and_time(
+                patient_lat, patient_lng,
+                float(hospital.latitude), float(hospital.longitude)
+            )
+            referral.distance_km = dist_km
+            referral.estimated_travel_time_minutes = int(dur_min)
+            referral.save(update_fields=['distance_km', 'estimated_travel_time_minutes'])
 
     def perform_update(self, serializer):
-        # Full CRUD – no status restriction
         serializer.save()
 
     def perform_destroy(self, instance):
-        # Full CRUD – any referral can be deleted (by authorised users)
         instance.delete()
 
 
@@ -127,7 +112,6 @@ class ReferralAttachmentViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [IsAuthenticated()]
-        # Allow Medical Directors/Admins OR the doctor who owns the referral
         return [IsAuthenticated(), IsMedicalDirectorOrAdminOrDoctorOwner()]
 
     def get_queryset(self):

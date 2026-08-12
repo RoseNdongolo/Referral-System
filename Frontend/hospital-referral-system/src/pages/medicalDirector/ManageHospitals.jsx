@@ -11,10 +11,19 @@ export default function ManageHospitals() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', code: '', address: '', phone_number: '', email: '',
-    longitude: '', latitude: '',   // store lat/lng separately for editing
-    has_emergency: false, has_surgery: false, has_icu: false, has_laboratory: false,
-    is_active: true, specialty_ids: []
+    name: '',
+    code: '',
+    address: '',
+    phone_number: '',
+    email: '',
+    latitude: '',
+    longitude: '',
+    has_emergency: false,
+    has_surgery: false,
+    has_icu: false,
+    has_laboratory: false,
+    is_active: true,
+    specialty_ids: []
   });
 
   useEffect(() => {
@@ -44,16 +53,18 @@ export default function ManageHospitals() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Prepare data for backend
     const data = { ...formData };
-    // Convert lat/lon to GeoJSON Point if both are provided
-    if (data.latitude && data.longitude) {
-      data.location = {
-        type: "Point",
-        coordinates: [parseFloat(data.longitude), parseFloat(data.latitude)]
-      };
+    
+    // Convert latitude/longitude to numbers or null (empty strings become null)
+    data.latitude = data.latitude ? parseFloat(data.latitude) : null;
+    data.longitude = data.longitude ? parseFloat(data.longitude) : null;
+    
+    // Ensure specialty_ids is an array of integers
+    if (data.specialty_ids && !Array.isArray(data.specialty_ids)) {
+      data.specialty_ids = [];
     }
-    delete data.latitude;
-    delete data.longitude;
+    
     try {
       if (editingId) {
         await api.put(`/hospitals/hospitals/${editingId}/`, data);
@@ -63,21 +74,26 @@ export default function ManageHospitals() {
       resetForm();
       fetchHospitals();
     } catch (err) {
-      setError('Save failed');
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'Save failed';
+      setError(msg);
     }
   };
 
   const handleEdit = (hospital) => {
     setEditingId(hospital.id);
-    let lat = '', lng = '';
-    if (hospital.location && hospital.location.coordinates) {
-      lng = hospital.location.coordinates[0];
-      lat = hospital.location.coordinates[1];
-    }
     setFormData({
-      ...hospital,
-      latitude: lat,
-      longitude: lng,
+      name: hospital.name || '',
+      code: hospital.code || '',
+      address: hospital.address || '',
+      phone_number: hospital.phone_number || '',
+      email: hospital.email || '',
+      latitude: hospital.latitude !== null && hospital.latitude !== undefined ? hospital.latitude : '',
+      longitude: hospital.longitude !== null && hospital.longitude !== undefined ? hospital.longitude : '',
+      has_emergency: hospital.has_emergency || false,
+      has_surgery: hospital.has_surgery || false,
+      has_icu: hospital.has_icu || false,
+      has_laboratory: hospital.has_laboratory || false,
+      is_active: hospital.is_active !== undefined ? hospital.is_active : true,
       specialty_ids: hospital.specialties?.map(s => s.id) || []
     });
     setShowForm(true);
@@ -98,10 +114,19 @@ export default function ManageHospitals() {
     setShowForm(false);
     setEditingId(null);
     setFormData({
-      name: '', code: '', address: '', phone_number: '', email: '',
-      longitude: '', latitude: '',
-      has_emergency: false, has_surgery: false, has_icu: false, has_laboratory: false,
-      is_active: true, specialty_ids: []
+      name: '',
+      code: '',
+      address: '',
+      phone_number: '',
+      email: '',
+      latitude: '',
+      longitude: '',
+      has_emergency: false,
+      has_surgery: false,
+      has_icu: false,
+      has_laboratory: false,
+      is_active: true,
+      specialty_ids: []
     });
     setError('');
   };
@@ -119,32 +144,151 @@ export default function ManageHospitals() {
             <h3>{editingId ? 'Edit Hospital' : 'New Hospital'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
-                <div className="form-group"><label>Name *</label><input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
-                <div className="form-group"><label>Code *</label><input name="code" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} required /></div>
+                <div className="form-group">
+                  <label>Name *</label>
+                  <input
+                    name="name"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Code *</label>
+                  <input
+                    name="code"
+                    value={formData.code}
+                    onChange={e => setFormData({ ...formData, code: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
-              <div className="form-group"><label>Address</label><textarea name="address" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} rows="2" /></div>
+
+              <div className="form-group">
+                <label>Address</label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  rows="2"
+                  placeholder="e.g., Bugando Medical Centre, Mwanza, Tanzania"
+                />
+                <small>Full address helps automatic location detection.</small>
+              </div>
+
               <div className="form-row">
-                <div className="form-group"><label>Phone</label><input name="phone_number" value={formData.phone_number} onChange={e => setFormData({...formData, phone_number: e.target.value})} /></div>
-                <div className="form-group"><label>Email</label><input name="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
               </div>
+
               <div className="form-row">
-                <div className="form-group"><label>Longitude</label><input type="number" step="any" name="longitude" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} /></div>
-                <div className="form-group"><label>Latitude</label><input type="number" step="any" name="latitude" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} /></div>
+                <div className="form-group">
+                  <label>Latitude (optional)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={e => setFormData({ ...formData, latitude: e.target.value })}
+                    placeholder="Leave empty for auto‑detection"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Longitude (optional)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={e => setFormData({ ...formData, longitude: e.target.value })}
+                    placeholder="Leave empty for auto‑detection"
+                  />
+                </div>
               </div>
+
               <div className="form-row">
-                <div className="form-group checkbox"><label><input type="checkbox" checked={formData.has_emergency} onChange={e => setFormData({...formData, has_emergency: e.target.checked})} /> Emergency</label></div>
-                <div className="form-group checkbox"><label><input type="checkbox" checked={formData.has_surgery} onChange={e => setFormData({...formData, has_surgery: e.target.checked})} /> Surgery</label></div>
-                <div className="form-group checkbox"><label><input type="checkbox" checked={formData.has_icu} onChange={e => setFormData({...formData, has_icu: e.target.checked})} /> ICU</label></div>
-                <div className="form-group checkbox"><label><input type="checkbox" checked={formData.has_laboratory} onChange={e => setFormData({...formData, has_laboratory: e.target.checked})} /> Laboratory</label></div>
+                <div className="form-group checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.has_emergency}
+                      onChange={e => setFormData({ ...formData, has_emergency: e.target.checked })}
+                    /> Emergency
+                  </label>
+                </div>
+                <div className="form-group checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.has_surgery}
+                      onChange={e => setFormData({ ...formData, has_surgery: e.target.checked })}
+                    /> Surgery
+                  </label>
+                </div>
+                <div className="form-group checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.has_icu}
+                      onChange={e => setFormData({ ...formData, has_icu: e.target.checked })}
+                    /> ICU
+                  </label>
+                </div>
+                <div className="form-group checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.has_laboratory}
+                      onChange={e => setFormData({ ...formData, has_laboratory: e.target.checked })}
+                    /> Laboratory
+                  </label>
+                </div>
               </div>
+
               <div className="form-group">
                 <label>Specialties</label>
-                <select multiple value={formData.specialty_ids} onChange={e => setFormData({...formData, specialty_ids: Array.from(e.target.selectedOptions, opt => parseInt(opt.value))})}>
-                  {specialties.map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}
+                <select
+                  multiple
+                  value={formData.specialty_ids}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      specialty_ids: Array.from(e.target.selectedOptions, opt => parseInt(opt.value))
+                    })
+                  }
+                >
+                  {specialties.map(spec => (
+                    <option key={spec.id} value={spec.id}>{spec.name}</option>
+                  ))}
                 </select>
                 <small>Hold Ctrl/Cmd to select multiple</small>
               </div>
-              <div className="form-group checkbox"><label><input type="checkbox" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} /> Active</label></div>
+
+              <div className="form-group checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                  /> Active
+                </label>
+              </div>
+
               <div className="form-actions">
                 <button type="submit" className="save-btn">Save</button>
                 <button type="button" className="cancel-btn" onClick={resetForm}>Cancel</button>
@@ -177,7 +321,11 @@ export default function ManageHospitals() {
                   <td>{h.code}</td>
                   <td>{h.phone_number || '-'}</td>
                   <td>{(h.specialties || []).map(s => s.name).join(', ') || '-'}</td>
-                  <td><span className={`status-badge ${h.is_active ? 'active' : 'inactive'}`}>{h.is_active ? 'Active' : 'Inactive'}</span></td>
+                  <td>
+                    <span className={`status-badge ${h.is_active ? 'active' : 'inactive'}`}>
+                      {h.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
                   <td>
                     <button onClick={() => handleEdit(h)}>Edit</button>
                     <button onClick={() => handleDelete(h.id)}>Delete</button>

@@ -76,19 +76,16 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         return ""
 
     def update(self, instance, validated_data):
-        # Update the fields that are directly set
         for field in ['phone_number', 'national_id', 'date_of_birth', 'gender', 'address', 'latitude', 'longitude']:
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
         
-        # If address was changed or provided, geocode it
         if 'address' in validated_data and validated_data['address']:
             lat, lng = geocode_address(validated_data['address'])
             if lat is not None and lng is not None:
                 instance.latitude = lat
                 instance.longitude = lng
             else:
-                # Optional: clear existing coordinates if geocoding fails
                 instance.latitude = None
                 instance.longitude = None
         
@@ -186,13 +183,18 @@ class ActiveDoctorSerializer(serializers.ModelSerializer):
         return f"Dr. {obj.first_name} {obj.last_name}".strip()
 
     def get_specialty(self, obj):
+        # Return the actual specialty name, or "General" if none
+        if hasattr(obj, 'doctor_profile') and obj.doctor_profile.specialization:
+            return obj.doctor_profile.specialization.name
         return "General"
 
+# ==================== Assign Patient Serializer ====================
 class AssignPatientSerializer(serializers.Serializer):
     patient_id = serializers.IntegerField()
     doctor_id = serializers.IntegerField()
     chief_complaint = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+    # ✅ Removed 'specialty' – it is not needed for assignment
 
     def validate_patient_id(self, value):
         if not User.objects.filter(id=value, role='patient').exists():

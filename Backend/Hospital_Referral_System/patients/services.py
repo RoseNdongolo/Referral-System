@@ -1,37 +1,20 @@
-# patients/services.py
 import requests
-from django.conf import settings
 
 def geocode_address(address):
     """
-    Convert an address string to latitude and longitude using Google Geocoding API.
-    Returns (lat, lng) tuple or (None, None) on error.
+    Convert address to coordinates using public Nominatim (free, no key).
+    Returns (lat, lng) or (None, None).
     """
     if not address:
         return None, None
-    
-    api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
-    if not api_key:
-        print("Google Maps API key not configured")
-        return None, None
-    
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {
-        'address': address,
-        'key': api_key
-    }
-    
+    headers = {'User-Agent': 'HospitalReferralSystem/1.0 (hospital@referral.com)'}
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {'q': address, 'format': 'json', 'limit': 1}
     try:
-        response = requests.get(url, params=params, timeout=10)
-        data = response.json()
-        if data['status'] == 'OK' and data['results']:
-            location = data['results'][0]['geometry']['location']
-            lat = location['lat']
-            lng = location['lng']
-            return lat, lng
-        else:
-            print(f"Geocoding failed for '{address}': {data['status']}")
-            return None, None
+        resp = requests.get(url, params=params, headers=headers, timeout=5)
+        data = resp.json()
+        if data:
+            return float(data[0]['lat']), float(data[0]['lon'])
     except Exception as e:
         print(f"Geocoding error: {e}")
-        return None, None
+    return None, None

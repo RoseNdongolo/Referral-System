@@ -55,7 +55,7 @@ import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import AdminHospitals from "./pages/admin/AdminHospitals.jsx";
 import AdminDepartments from "./pages/admin/AdminDepartments.jsx";
 import AdminSpecialties from "./pages/admin/AdminSpecialties.jsx";
-import AdminSpecialists from "./pages/admin/AdminSpecialists.jsx";
+import AdminDoctors from "./pages/admin/AdminDoctors.jsx";
 import AdminReferralsList from "./pages/admin/AdminReferralsList.jsx";
 import AdminReferralDetail from "./pages/admin/AdminReferralDetail.jsx";
 import AdminProfile from "./pages/admin/AdminProfile.jsx";
@@ -131,7 +131,7 @@ function App() {
             <Route path="/admin/hospitals" element={<AdminHospitals />} />
             <Route path="/admin/departments" element={<AdminDepartments />} />
             <Route path="/admin/specialties" element={<AdminSpecialties />} />
-            <Route path="/admin/specialists" element={<AdminSpecialists />} />
+            <Route path="/admin/doctors" element={<AdminDoctors />} />
             <Route path="/admin/referrals" element={<AdminReferralsList />} />
             <Route path="/admin/referrals/:id" element={<AdminReferralDetail />} />
             <Route path="/admin/profile" element={<AdminProfile />} />

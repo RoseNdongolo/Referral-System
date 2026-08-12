@@ -1,98 +1,212 @@
-/* MapPage.css */
+/* src/pages/patient/MapPage.css */
+
 .map-page {
-  max-width: 1400px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .map-header {
-  background: white;
+  background: #f8f9fa;
+  padding: 20px;
   border-radius: 12px;
-  padding: 1.2rem 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .map-header h1 {
-  font-size: 1.6rem;
-  margin: 0 0 0.5rem 0;
-  color: #1f1f1f;
-  border-left: 5px solid #1976d2;
-  padding-left: 1rem;
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.8rem;
 }
 
 .map-header p {
-  margin: 0.25rem 0;
-  color: #3c4043;
-  font-size: 0.9rem;
+  margin: 5px 0;
+  color: #555;
 }
 
 .map-header p strong {
   color: #2c3e50;
-  font-weight: 600;
-}
-
-.map-wrapper {
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-}
-
-.loading-state,
-.error-state {
-  text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #6c757d;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.error-state {
-  color: #c62828;
-  background-color: #ffebee;
 }
 
 .map-warning {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1rem;
-  background-color: #fff3e0;
-  color: #e65100;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  text-align: center;
-  border-left: 4px solid #e65100;
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border-radius: 6px;
+  color: #856404;
 }
 
-/* Custom styling for the map container (the inner div) */
-.map-wrapper .gm-style {
-  border-radius: 0 !important;
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
 }
 
-/* Optional: style for the advanced marker pin label */
-.gm-style .gm-style-iw-c {
+.center-btn, .google-maps-btn, .retry-btn {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.center-btn {
+  background-color: #4285F4;
+  color: white;
+}
+
+.center-btn:hover {
+  background-color: #2b6ed7;
+}
+
+.google-maps-btn {
+  background-color: #34A853;
+  color: white;
+}
+
+.google-maps-btn:hover {
+  background-color: #2a8c46;
+}
+
+.retry-btn {
+  background-color: #dc3545;
+  color: white;
+  margin-top: 10px;
+}
+
+.map-wrapper {
   border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: #e9ecef;
 }
 
-/* Responsive adjustments */
+/* Fullscreen styling */
+.map-wrapper:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.map-wrapper:fullscreen .leaflet-container {
+  height: 100vh;
+}
+
+.fullscreen-btn {
+  background: white;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fullscreen-btn:hover {
+  background: #f0f0f0;
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error-state {
+  color: #dc3545;
+  background: #f8d7da;
+  border-radius: 8px;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .map-page {
-    margin: 1rem auto;
-    padding: 0 0.5rem;
-  }
-  .map-header {
-    padding: 1rem;
+    padding: 10px;
   }
   .map-header h1 {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
   }
-  .loading-state,
-  .error-state {
-    padding: 2rem;
-    font-size: 1rem;
+  .button-group {
+    flex-direction: column;
   }
+  .center-btn, .google-maps-btn {
+    width: 100%;
+  }
+}
+.warning-icon {
+  margin-right: 6px;
+  color: #ffc107;
+  font-size: 1rem;
+}
+
+.btn-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.retry-gps-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.retry-gps-btn:hover {
+  background: #b02a37;
+}
+
+/* MapPage.css – add these styles */
+
+.map-info {
+  background: #e3f2fd;
+  border-left: 4px solid #1976d2;
+  padding: 12px 16px;
+  margin: 10px 0;
+  border-radius: 6px;
+  color: #0d3c61;
+  font-size: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-info .info-icon {
+  font-size: 1.2rem;
+  color: #1976d2;
+  margin-right: 4px;
+}
+
+.map-info strong {
+  color: #0d3c61;
+}
+
+.travel-options-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.travel-options-btn:hover {
+  background: #1559b0;
 }

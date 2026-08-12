@@ -1,6 +1,8 @@
+// src/pages/patient/Profile.jsx
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import patientService from '../../services/patientService';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
 import './Profile.css';
 
 export default function Profile() {
@@ -13,6 +15,8 @@ export default function Profile() {
     email: '',
     phone_number: '',
     address: '',
+    latitude: null,
+    longitude: null,
     national_id: '',
     gender: '',
     date_of_birth: '',
@@ -28,13 +32,10 @@ export default function Profile() {
     confirm_password: '',
   });
   const [passwordMessage, setPasswordMessage] = useState('');
-
-  // Visibility toggles for password fields
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Refs to manually override autofill (optional)
   const oldPasswordRef = useRef(null);
   const newPasswordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
@@ -51,6 +52,8 @@ export default function Profile() {
           email: data.email || '',
           phone_number: data.phone_number || '',
           address: data.address || '',
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
           national_id: data.national_id || '',
           gender: data.gender || '',
           date_of_birth: data.date_of_birth || '',
@@ -63,11 +66,19 @@ export default function Profile() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleAddressSelect = (location) => {
+    setFormData({
+      ...formData,
+      address: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+  };
+
   const handlePasswordChange = (e) => {
     setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
   };
 
-  // HACK: Disable autofill by making input readonly then enable on focus
   const handlePasswordFocus = (e) => {
     e.target.removeAttribute('readonly');
   };
@@ -78,9 +89,10 @@ export default function Profile() {
     setMessage('');
 
     const dataToSend = { ...formData };
-    if (!dataToSend.date_of_birth) {
-      dataToSend.date_of_birth = null;
-    }
+    if (!dataToSend.date_of_birth) dataToSend.date_of_birth = null;
+    // Ensure latitude/longitude are sent as numbers or null
+    dataToSend.latitude = dataToSend.latitude ? parseFloat(dataToSend.latitude) : null;
+    dataToSend.longitude = dataToSend.longitude ? parseFloat(dataToSend.longitude) : null;
 
     try {
       const updated = await patientService.updateMyProfile(dataToSend);
@@ -88,12 +100,9 @@ export default function Profile() {
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      let errorMsg = 'Error updating profile';
-      if (err.response?.data) {
-        errorMsg = err.response.data.error || JSON.stringify(err.response.data);
-      }
+      const msg = err.response?.data?.error || 'Error updating profile';
       setError(true);
-      setMessage(errorMsg);
+      setMessage(msg);
     }
   };
 
@@ -105,11 +114,10 @@ export default function Profile() {
       return;
     }
     if (passwordData.new_password.length < 8) {
-      setPasswordMessage('New password must be at least 8 characters');
+      setPasswordMessage('Password must be at least 8 characters');
       return;
     }
     try {
-      // This API call uses the logged-in patient's token – only changes their own password
       await patientService.changePassword({
         old_password: passwordData.old_password,
         new_password: passwordData.new_password,
@@ -118,8 +126,7 @@ export default function Profile() {
       setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
       setTimeout(() => setPasswordMessage(''), 3000);
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to change password';
-      setPasswordMessage(msg);
+      setPasswordMessage(err.response?.data?.error || 'Failed to change password');
     }
   };
 
@@ -187,9 +194,29 @@ export default function Profile() {
             <input type="text" name="phone_number" value={formData.phone_number} onChange={handleChange} autoComplete="off" />
           </div>
 
+          {/* Address with Autocomplete – used for admin + fallback location */}
           <div className="form-group">
-            <label>Address</label>
-            <textarea name="address" value={formData.address} onChange={handleChange} autoComplete="off"></textarea>
+            <label>Address (Administrative & Navigation Fallback)</label>
+            <AddressAutocomplete
+              placeholder="Start typing your address..."
+              defaultValue={formData.address}
+              onSelect={handleAddressSelect}
+            />
+            <small>
+              Used for hospital records. If live location fails on the map, this address will be used as your starting point.
+            </small>
+          </div>
+
+          {/* Read‑only coordinates for reference */}
+          <div className="form-row">
+            <div className="form-group half">
+              <label>Latitude</label>
+              <input type="text" value={formData.latitude || ''} disabled className="readonly-field" />
+            </div>
+            <div className="form-group half">
+              <label>Longitude</label>
+              <input type="text" value={formData.longitude || ''} disabled className="readonly-field" />
+            </div>
           </div>
 
           <div className="form-group">
@@ -219,10 +246,6 @@ export default function Profile() {
         <hr className="profile-divider" />
         <h3>Change Password</h3>
         <form onSubmit={handlePasswordSubmit} autoComplete="off">
-          {/* Dummy hidden fields to trick browser (optional but effective) */}
-          <input type="text" name="fakeusername" style={{ display: 'none' }} autoComplete="off" />
-          <input type="password" name="fakepassword" style={{ display: 'none' }} autoComplete="off" />
-
           <div className="form-group">
             <label>Current Password</label>
             <div className="password-input-wrapper">
@@ -234,15 +257,10 @@ export default function Profile() {
                 onChange={handlePasswordChange}
                 required
                 autoComplete="off"
-                readOnly   // prevents autofill; will be removed on focus
+                readOnly
                 onFocus={handlePasswordFocus}
               />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                aria-label="Toggle password visibility"
-              >
+              <button type="button" className="toggle-password" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
                 {showCurrentPassword ? "Hide" : "Show"}
               </button>
             </div>
@@ -258,16 +276,11 @@ export default function Profile() {
                 value={passwordData.new_password}
                 onChange={handlePasswordChange}
                 required
-                autoComplete="new-password"   // key: tells browser this is a new password, not existing
+                autoComplete="new-password"
                 readOnly
                 onFocus={handlePasswordFocus}
               />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                aria-label="Toggle password visibility"
-              >
+              <button type="button" className="toggle-password" onClick={() => setShowNewPassword(!showNewPassword)}>
                 {showNewPassword ? "Hide" : "Show"}
               </button>
             </div>
@@ -288,12 +301,7 @@ export default function Profile() {
                 readOnly
                 onFocus={handlePasswordFocus}
               />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label="Toggle password visibility"
-              >
+              <button type="button" className="toggle-password" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? "Hide" : "Show"}
               </button>
             </div>

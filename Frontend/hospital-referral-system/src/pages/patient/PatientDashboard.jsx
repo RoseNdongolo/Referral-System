@@ -1,5 +1,7 @@
+// src/pages/patient/PatientDashboard.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaUser, FaClipboardList, FaMap, FaStethoscope, FaHospital } from 'react-icons/fa';
 import patientService from '../../services/patientService';
 import './PatientDashboard.css';
 
@@ -22,13 +24,11 @@ export default function PatientDashboard() {
           referrals = referralsRes.data;
         } else if (referralsRes.data?.results && Array.isArray(referralsRes.data.results)) {
           referrals = referralsRes.data.results;
-        } else {
-          console.warn('Unexpected referrals response structure:', referralsRes.data);
         }
 
         setRecentReferrals(referrals.slice(0, 3));
       } catch (error) {
-        console.error('Dashboard error:', error);
+        // Silent fail in production – error can be sent to a logging service
       } finally {
         setLoading(false);
       }
@@ -46,26 +46,32 @@ export default function PatientDashboard() {
         <p>Manage your referrals and personal information</p>
       </div>
 
-      {/* Quick action cards for navigation */}
+      {/* Quick action cards */}
       <div className="quick-actions">
         <Link to="/patient/profile" className="action-card">
-          <div className="action-icon">👤</div>
+          <div className="action-icon">
+            <FaUser />
+          </div>
           <h3>My Profile</h3>
           <p>View and edit your personal details</p>
         </Link>
         <Link to="/patient/my-referrals" className="action-card">
-          <div className="action-icon">📋</div>
+          <div className="action-icon">
+            <FaClipboardList />
+          </div>
           <h3>My Referrals</h3>
           <p>See all your referral history</p>
         </Link>
         <Link to="/patient/map" className="action-card">
-          <div className="action-icon">🗺️</div>
+          <div className="action-icon">
+            <FaMap />
+          </div>
           <h3>Navigation Map</h3>
           <p>Get directions to referred hospitals</p>
         </Link>
       </div>
 
-      {/* Recent referrals section */}
+      {/* Recent referrals */}
       <div className="info-card">
         <div className="flex-between">
           <h2>Recent Referrals</h2>

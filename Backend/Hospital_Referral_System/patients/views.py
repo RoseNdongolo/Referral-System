@@ -261,3 +261,40 @@ class PatientProfileViewSet(ModelViewSet):
         consultation = get_object_or_404(Consultation, pk=pk, patient=request.user)
         serializer = ConsultationSerializer(consultation)
         return Response(serializer.data)
+    
+
+
+    @action(detail=False, methods=['get'], url_path='referral/(?P<consultation_id>[^/.]+)/nearest-hospitals')
+    def nearest_hospitals_for_referral(self, request, consultation_id):
+        from django.shortcuts import get_object_or_404
+        from hospitals.models import Hospital
+        from hospitals.services import get_distance_matrix
+        consultation = get_object_or_404(Consultation, id=consultation_id, patient=request.user)
+        specialty = consultation.required_specialty
+        if not specialty:
+            return Response({"error": "Referral has no specialty"}, status=400)
+        profile = request.user.patient_profile
+        if not profile.latitude or not profile.longitude:
+            return Response({"error": "Patient location missing"}, status=400)
+        hospitals_qs = Hospital.objects.filter(is_active=True, specialties__name__iexact=specialty).distinct()
+        valid = [(h, float(h.longitude), float(h.latitude)) for h in hospitals_qs if h.longitude and h.latitude]
+        if not valid:
+            return Response({"error": f"No hospitals with specialty '{specialty}' have coordinates"}, status=404)
+        hospitals_list, lons, lats = zip(*[(h, lon, lat) for h, lon, lat in valid])
+        dest_coords = [(lon, lat) for lon, lat in zip(lons, lats)]
+        patient_coord = (float(profile.longitude), float(profile.latitude))
+        durations, distances = get_distance_matrix(patient_coord, dest_coords)
+        results = []
+        for idx, h in enumerate(hospitals_list):
+            results.append({
+                "id": h.id,
+                "name": h.name,
+                "distance_km": round(distances[idx]/1000, 2),
+                "duration_min": round(durations[idx]/60, 1),
+                "address": h.address,
+                "recommended": False
+            })
+        results.sort(key=lambda x: x["distance_km"])
+        if results:
+            results[0]["recommended"] = True
+        return Response({"specialty": specialty, "hospitals": results})

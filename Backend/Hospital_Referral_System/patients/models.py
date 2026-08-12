@@ -41,6 +41,8 @@ class Consultation(models.Model):
     notes = models.TextField(blank=True, null=True)
     diagnosis = models.TextField(blank=True, null=True)
     test_results = models.TextField(blank=True, null=True)
+    # NEW: store the specialty required for referral
+    required_specialty = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return f"{self.patient.username} -> Dr. {self.doctor.username} ({self.status})"

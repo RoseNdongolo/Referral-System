@@ -60,7 +60,7 @@ const receptionistLinks = [
     { to: "/admin", label: "Dashboard" },
     { to: "/admin/users", label: "Manage Users" },
     { to: "/admin/hospitals", label: "Hospitals" },
-    { to: "/admin/specialists", label: "Specialists" },
+    { to: "/admin/Doctors", label: "Doctors" },
     { to: "/admin/departments", label: "Departments" },
     { to: "/admin/referrals", label: "All Referrals" },
     { to: "/admin/specialties", label: "Specialties" },

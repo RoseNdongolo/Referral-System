@@ -1,6 +1,7 @@
 // src/pages/medicalDirector/MedicalDirectorDashboard.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaUserMd, FaClipboardList, FaUser, FaUsers } from 'react-icons/fa';
 import medicalDirectorService from '../../services/medicalDirectorService';
 import './MedicalDirectorDashboard.css';
 
@@ -16,7 +17,7 @@ export default function MedicalDirectorDashboard() {
           medicalDirectorService.getMyProfile(),
           medicalDirectorService.getAllDoctors(),
           medicalDirectorService.getAllReferrals(),
-          medicalDirectorService.getAllPatients(), // NEW
+          medicalDirectorService.getAllPatients(),
         ]);
         setProfile(profileRes.data);
         const doctors = doctorsRes.data;
@@ -25,10 +26,11 @@ export default function MedicalDirectorDashboard() {
         setStats({
           doctors: doctors.length,
           pendingReferrals: referrals.filter(r => r.status === 'pending').length,
-          totalPatients: patients.length,      // now correct
+          totalPatients: patients.length,
         });
       } catch (err) {
-        console.error(err);
+        // Silent in production; can log in development
+        // if (process.env.NODE_ENV === 'development') console.error(err);
       } finally {
         setLoading(false);
       }
@@ -62,17 +64,17 @@ export default function MedicalDirectorDashboard() {
 
       <div className="quick-actions">
         <Link to="/medical-director/doctors" className="action-card">
-          <div className="action-icon">👨‍⚕️</div>
+          <div className="action-icon"><FaUserMd /></div>
           <h3>Manage Doctors</h3>
           <p>View, activate/deactivate, update specialties</p>
         </Link>
         <Link to="/medical-director/referrals" className="action-card">
-          <div className="action-icon">📋</div>
+          <div className="action-icon"><FaClipboardList /></div>
           <h3>Oversee Referrals</h3>
           <p>Monitor all referrals across the system</p>
         </Link>
         <Link to="/medical-director/profile" className="action-card">
-          <div className="action-icon">👤</div>
+          <div className="action-icon"><FaUser /></div>
           <h3>My Profile</h3>
           <p>Update your personal information</p>
         </Link>
