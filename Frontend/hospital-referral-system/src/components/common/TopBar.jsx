@@ -1,6 +1,8 @@
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 import "./TopBar.css";
+// ✅ Import your image
+import logoImage from "../../assets/image.png";
 
 export default function TopBar({
   showUser = true,
@@ -22,10 +24,12 @@ export default function TopBar({
   return (
     <header className={`topbar ${compact ? "topbar--compact" : ""}`}>
       <div className="topbar-brand">
-        <span className="topbar-icon">🩺</span>
+        {/* ✅ Replace emoji with image */}
+        <img src={logoImage} alt="Hospital Logo" className="topbar-logo" />
         <div className="topbar-brand-text">
-          <strong>MediGraph</strong>
-          <small>Hospital Referral System</small>
+          {/* Optionally change the text */}
+          <strong>Hospital Referral System</strong>
+          <small>Connecting Patients with Specialists</small>
         </div>
       </div>
 

@@ -73,11 +73,6 @@ export default function MedicalDirectorDashboard() {
           <h3>Oversee Referrals</h3>
           <p>Monitor all referrals across the system</p>
         </Link>
-        <Link to="/medical-director/profile" className="action-card">
-          <div className="action-icon"><FaUser /></div>
-          <h3>My Profile</h3>
-          <p>Update your personal information</p>
-        </Link>
       </div>
     </div>
   );

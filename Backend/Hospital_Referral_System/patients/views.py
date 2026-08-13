@@ -237,8 +237,19 @@ class PatientProfileViewSet(ModelViewSet):
         new_status = request.data.get('status')
         if new_status not in dict(Consultation.STATUS_CHOICES):
             return Response({'error': 'Invalid status'}, status=400)
+
         consultation.status = new_status
         consultation.save()
+
+        # ✅ NEW: If status is 'completed', also update the associated referral
+        if new_status == 'completed':
+            from referrals.models import Referral
+            referral = Referral.objects.filter(consultation=consultation).first()
+            if referral and referral.status != 'completed':
+                referral.status = 'completed'
+                referral.save()
+                logger.info(f"Referral {referral.id} auto-updated to completed via consultation {consultation.id}")
+
         return Response({'status': consultation.status})
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsDoctor])
@@ -261,8 +272,6 @@ class PatientProfileViewSet(ModelViewSet):
         consultation = get_object_or_404(Consultation, pk=pk, patient=request.user)
         serializer = ConsultationSerializer(consultation)
         return Response(serializer.data)
-    
-
 
     @action(detail=False, methods=['get'], url_path='referral/(?P<consultation_id>[^/.]+)/nearest-hospitals')
     def nearest_hospitals_for_referral(self, request, consultation_id):

@@ -8,7 +8,7 @@ from accounts.permissions import IsDoctor, IsMedicalDirectorOrAdminOrDoctorOwner
 from hospitals.models import Hospital
 from .models import Referral, ReferralAttachment
 from .serializers import ReferralSerializer, ReferralAttachmentSerializer
-from .services import get_nearest_matching_hospital, get_distance_and_time   # <-- changed
+from .services import get_nearest_matching_hospital, get_distance_and_time
 
 
 class ReferralViewSet(ModelViewSet):
@@ -48,6 +48,7 @@ class ReferralViewSet(ModelViewSet):
         consultation_id = self.request.data.get('consultation')
         hospital_id = self.request.data.get('hospital_id')          # doctor's chosen hospital
         patient = None
+        consultation = None
 
         if consultation_id:
             from patients.models import Consultation
@@ -80,15 +81,16 @@ class ReferralViewSet(ModelViewSet):
         if not hospital:
             raise ValidationError("No suitable hospital found for this referral.")
 
-        # Create referral without distance/time first
+        # ✅ Create referral WITH consultation link
         referral = serializer.save(
             doctor=self.request.user,
             hospital=hospital,
             required_specialty=required_specialty,
-            patient=patient
+            patient=patient,
+            consultation=consultation   # <-- THIS IS THE FIX
         )
 
-        # Compute distance & travel time using OSRM (or Haversine fallback)
+        # Compute distance & travel time
         if patient_lat is not None and patient_lng is not None and hospital.latitude and hospital.longitude:
             dist_km, dur_min = get_distance_and_time(
                 patient_lat, patient_lng,

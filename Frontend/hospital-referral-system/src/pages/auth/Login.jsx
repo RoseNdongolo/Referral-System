@@ -56,7 +56,7 @@ const Login = () => {
           }}
         >
           <div className="logo">
-            <span>🩺</span> MEDIGRAPH
+            <span></span> HOSPITAL REFERRL SYSTEM
           </div>
 
           <div className="auth-hero">

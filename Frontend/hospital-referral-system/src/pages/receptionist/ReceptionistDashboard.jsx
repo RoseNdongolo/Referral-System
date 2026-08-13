@@ -1,7 +1,15 @@
 // src/pages/receptionist/ReceptionistDashboard.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaUser, FaClipboardList, FaUsers, FaThumbtack, FaExchangeAlt, FaPlus, FaStethoscope } from 'react-icons/fa';
+import {
+  FaUser,
+  FaClipboardList,
+  FaUsers,
+  FaThumbtack,
+  FaExchangeAlt,
+  FaPlus,
+  FaDesktop,
+} from 'react-icons/fa';
 import receptionistService from '../../services/receptionistService';
 import './ReceptionistDashboard.css';
 
@@ -34,7 +42,7 @@ export default function ReceptionistDashboard() {
         setRecentPatients(recent);
         setRecentReferrals(referrals.slice(-5).reverse());
       } catch (err) {
-        // Silent fail in production – error can be sent to a logging service
+        // Silent fail
       } finally {
         setLoading(false);
       }
@@ -50,6 +58,29 @@ export default function ReceptionistDashboard() {
         <h1>Welcome back, {profile?.full_name || profile?.username}!</h1>
         <p>Receptionist Panel – Manage patient registrations and referrals</p>
       </div>
+
+      {/* Workstation Card */}
+      {profile && (
+        <div className="workstation-card">
+          <h3>
+            <FaDesktop style={{ marginRight: '8px' }} />
+            My Workstation
+          </h3>
+          <div className="workstation-details">
+            <p><strong>Employee ID:</strong> {profile.employee_id || 'N/A'}</p>
+            <p><strong>Desk Number:</strong> {profile.desk_number || 'N/A'}</p>
+            <p>
+              <strong>Shift:</strong> {profile.shift ? profile.shift.charAt(0).toUpperCase() + profile.shift.slice(1) : 'N/A'}
+            </p>
+            <p>
+              <strong>Status:</strong>
+              <span className={`status-badge ${profile.is_active ? 'status-active' : 'status-inactive'}`}>
+                {profile.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -87,11 +118,6 @@ export default function ReceptionistDashboard() {
           <div className="action-icon"><FaExchangeAlt /></div>
           <h3>Referrals</h3>
           <p>View all referral requests</p>
-        </Link>
-        <Link to="/receptionist/profile" className="action-card">
-          <div className="action-icon"><FaUser /></div>
-          <h3>My Profile</h3>
-          <p>Update your personal information</p>
         </Link>
       </div>
 

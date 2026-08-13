@@ -46,13 +46,11 @@ export default function ManageReceptionists() {
     setError('');
     try {
       if (editingId) {
-        // Update: remove password fields if empty
         const updateData = { ...formData };
         delete updateData.confirm_password;
         if (!updateData.password) delete updateData.password;
         await medicalDirectorService.updateReceptionist(editingId, updateData);
       } else {
-        // Create: validate password
         if (!formData.password || formData.password !== formData.confirm_password) {
           setError('Password and confirm password must match');
           return;
@@ -61,8 +59,9 @@ export default function ManageReceptionists() {
         delete createData.confirm_password;
         await medicalDirectorService.createReceptionist(createData);
       }
-      resetForm();
-      await fetchReceptionists(); // refresh list
+      // ✅ Use closeModal() to reset form and close modal
+      closeModal();
+      await fetchReceptionists();
     } catch (err) {
       console.error('Save error:', err);
       const msg = err.response?.data?.error || err.response?.data?.username?.[0] || 'Operation failed';
@@ -173,7 +172,7 @@ export default function ManageReceptionists() {
                       {r.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td>
+                  <td className="action-buttons">
                     <button onClick={() => openModal(r)} className="edit-btn">Edit</button>
                     <button onClick={() => handleDelete(r.receptionist_id)} className="delete-btn">Delete</button>
                     <button onClick={() => toggleActive(r.receptionist_id, r.is_active)} className="toggle-btn">

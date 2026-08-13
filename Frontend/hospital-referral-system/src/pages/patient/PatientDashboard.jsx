@@ -48,13 +48,6 @@ export default function PatientDashboard() {
 
       {/* Quick action cards */}
       <div className="quick-actions">
-        <Link to="/patient/profile" className="action-card">
-          <div className="action-icon">
-            <FaUser />
-          </div>
-          <h3>My Profile</h3>
-          <p>View and edit your personal details</p>
-        </Link>
         <Link to="/patient/my-referrals" className="action-card">
           <div className="action-icon">
             <FaClipboardList />

@@ -12,13 +12,16 @@ class ConsultationSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
     patient_mrn = serializers.SerializerMethodField()
+    patient_latitude = serializers.SerializerMethodField()      # new
+    patient_longitude = serializers.SerializerMethodField()     # new
 
     class Meta:
         model = Consultation
         fields = [
             'id', 'patient', 'doctor', 'patient_name', 'patient_mrn', 'doctor_name',
             'status', 'assigned_at', 'chief_complaint', 'notes',
-            'diagnosis', 'test_results'
+            'diagnosis', 'test_results',
+            'patient_latitude', 'patient_longitude'   # new
         ]
 
     def get_patient_name(self, obj):
@@ -30,6 +33,18 @@ class ConsultationSerializer(serializers.ModelSerializer):
     def get_patient_mrn(self, obj):
         try:
             return obj.patient.patient_profile.medical_record_number
+        except:
+            return None
+
+    def get_patient_latitude(self, obj):
+        try:
+            return obj.patient.patient_profile.latitude
+        except:
+            return None
+
+    def get_patient_longitude(self, obj):
+        try:
+            return obj.patient.patient_profile.longitude
         except:
             return None
 
@@ -183,7 +198,6 @@ class ActiveDoctorSerializer(serializers.ModelSerializer):
         return f"Dr. {obj.first_name} {obj.last_name}".strip()
 
     def get_specialty(self, obj):
-        # Return the actual specialty name, or "General" if none
         if hasattr(obj, 'doctor_profile') and obj.doctor_profile.specialization:
             return obj.doctor_profile.specialization.name
         return "General"
@@ -194,7 +208,6 @@ class AssignPatientSerializer(serializers.Serializer):
     doctor_id = serializers.IntegerField()
     chief_complaint = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
-    # ✅ Removed 'specialty' – it is not needed for assignment
 
     def validate_patient_id(self, value):
         if not User.objects.filter(id=value, role='patient').exists():
